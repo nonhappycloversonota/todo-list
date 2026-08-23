@@ -1,0 +1,3 @@
+# ローカルサーバーのアクセスログ（LAN内IPアドレスが記録されるため除外）
+.lan_server.log
+.preview_server.log
