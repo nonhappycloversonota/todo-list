@@ -43,8 +43,10 @@
     --radius-control: 10px;
     --radius-block: 8px;
   }
+  /* ダークモードのトークン。⚙️設定で「システムに合わせる」の時はOSの設定に従い(prefers-color-scheme)、
+     「ライト」「ダーク」を明示選択した時はdata-theme属性でそちらを優先する */
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --bg: #18160f;
       --card: #221f17;
       --card-alt: #29261c;
@@ -64,6 +66,25 @@
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
   }
+  :root[data-theme="dark"] {
+    --bg: #18160f;
+    --card: #221f17;
+    --card-alt: #29261c;
+    --text: #ece4d3;
+    --text-sub: #a89a7d;
+    --border: #3a3423;
+    --accent: #82b6a2;
+    --accent-strong: #aad4c1;
+    --accent-soft: #24352e;
+    --danger: #dc8b74;
+    --danger-soft: #3c2a22;
+    --warn: #dcb268;
+    --warn-soft: #392c17;
+    --ok: #82b6a2;
+    --chip-bg: #2f2a1d;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 26px -8px rgba(0, 0, 0, 0.45);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -76,15 +97,20 @@
     font-feature-settings: "palt";
   }
   h1 {
-    font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; margin: 0 0 4px;
+    font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; margin: 0;
     letter-spacing: .02em; text-wrap: balance;
   }
+  .app-header {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: var(--space-3); margin-bottom: 4px;
+  }
+  .app-header-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
   .sub {
     color: var(--text-sub); font-size: 0.84rem; margin: 0 0 var(--space-7); padding-bottom: var(--space-5);
     border-bottom: 1px solid var(--border);
   }
   .page { max-width: 1400px; margin: 0 auto; }
-  .pct, .cap-label, th, .gantt2-day, .hour-label, td.num { font-variant-numeric: tabular-nums; }
+  th, .gantt2-day, .hour-label, td.num { font-variant-numeric: tabular-nums; }
   /* スケジュール（左）とタスク管理（右：追加フォーム＋一覧）を横並びにし、上下スクロールの往復をなくす */
   .schedule-list-row { display: flex; align-items: flex-start; gap: var(--space-5); margin-bottom: var(--space-6); }
   .schedule-list-row .schedule-card { flex: 0 0 360px; margin-bottom: 0; position: sticky; top: var(--space-5); }
@@ -96,8 +122,6 @@
     .schedule-list-row .schedule-card { flex: none; width: 100%; position: static; }
     .schedule-list-row .list-col { width: 100%; }
   }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); margin-bottom: var(--space-6); }
-  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -110,30 +134,20 @@
     display: flex; align-items: center; gap: 10px;
     padding-bottom: var(--space-3); border-bottom: 1px solid var(--border);
   }
-  /* 主役カード（今日・今週のキャパ消費）は行間を少し広く取り、数値そのものの視認性を優先する */
-  .cap-row { margin-bottom: var(--space-5); }
-  .cap-row:last-child { margin-bottom: 0; }
-  .cap-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.88rem; margin-bottom: var(--space-2); max-width: 340px; }
-  .cap-label .pct { font-weight: 700; font-size: 1.05rem; letter-spacing: -.01em; }
   .settings-row { display: flex; align-items: center; gap: var(--space-2); font-size: 0.88rem; margin-bottom: var(--space-3); flex-wrap: wrap; }
   .settings-row > span:first-child { min-width: 96px; color: var(--text-sub); }
   .settings-row input, .settings-row select {
     padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius-control);
     background: var(--bg); color: var(--text); font-size: 0.88rem;
   }
-  .settings-row input[type="number"] { width: 76px; }
-  #workStart, #workEnd { width: 90px; }
-  /* 設定カード内のグルーピング区切り。dashed=関連項目のゆるい区切り、実線=外部連携など別枠であることを示す。
-     divider-strongはdividerより明確に間隔を空け、外部連携という別枠であることを強調する */
-  .settings-row.divider { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px dashed var(--border); }
-  .settings-row.divider-strong { margin-top: var(--space-5); padding-top: var(--space-3); border-top: 1px solid var(--border); }
   /* 「設定」系カードは日々確認する主役情報（キャパ消費・スケジュール）より控えめに見せ、優先度の差を伝える */
   .card-secondary { box-shadow: var(--shadow-sm); }
   .card-secondary h2 { font-size: 1.02rem; color: var(--text-sub); }
   .form-card { margin-bottom: var(--space-6); }
   /* minmax(0,1fr)にすることで、中身（select/inputの最小幅）に列幅が引っ張られないようにする。
-     これにより「日程」の.form-gridも、上の.form-gridと列幅が完全に一致する */
-  .form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+     6列×2行で、タイトル〜終了日・追加ボタンまで全項目がちょうど2行に収まる */
+  .form-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-4); }
+  @media (max-width: 1100px) { .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 900px) { .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .field { display: flex; flex-direction: column; gap: var(--space-1); }
   .field label { font-size: 0.75rem; color: var(--text-sub); font-weight: 600; letter-spacing: .01em; }
@@ -149,13 +163,8 @@
   }
   .field.wide { grid-column: span 2; }
   .field.wide input, .field.wide select { max-width: none; } /* 2列分の幅いっぱいまで伸ばす（タイトル） */
-  /* 日程（開始日／時刻／終了日）は上と同じ.form-gridに乗せ、見積もり時間・状態・繰り返しと列幅をぴったり揃える。
-     margin/paddingをform-cardの他の区切りと同じ強さ（18px）にし、「別セクション」であることを明確にする */
-  .form-dates { margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px dashed var(--border); }
-  .form-section-label {
-    font-size: 0.72rem; font-weight: 700; color: var(--text-sub);
-    text-transform: uppercase; letter-spacing: .06em; margin-bottom: var(--space-2);
-  }
+  .field-btn label { visibility: hidden; } /* 他の項目とラベル分の高さを揃えるためのダミー */
+  .field-btn .btn { width: 100%; max-width: none; }
   .btn {
     padding: 10px 20px; border-radius: var(--radius-control); border: none; cursor: pointer;
     font-size: 0.86rem; font-weight: 700; letter-spacing: .01em;
@@ -168,7 +177,6 @@
   .btn-secondary { background: var(--chip-bg); color: var(--text); }
   .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
   .btn-cal { background: var(--accent-soft); color: var(--accent-strong); border: 1px solid var(--accent); font-weight: 700; }
-  .btn-row { margin-top: var(--space-5); display: flex; gap: 8px; }
   .undo-toast {
     position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
     display: flex; align-items: center; gap: 14px;
@@ -178,6 +186,16 @@
     max-width: calc(100vw - 32px);
   }
   .undo-toast #undoToastBtn { background: var(--accent); color: #fff8ec; padding: 7px 14px; font-size: 0.82rem; flex-shrink: 0; }
+  .context-menu {
+    position: fixed; z-index: 200; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius-block); box-shadow: var(--shadow); padding: 4px; min-width: 190px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .context-menu button {
+    background: none; border: none; text-align: left; padding: 8px 10px; font-size: 0.82rem;
+    color: var(--text); border-radius: 6px; cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
+  .context-menu button:hover { background: var(--accent-soft); color: var(--accent-strong); }
   .tab-row { display: flex; gap: 4px; margin: -4px 0 var(--space-5); border-bottom: 1px solid var(--border); }
   .tab-btn {
     background: none; border: none; cursor: pointer; padding: 8px 4px 12px;
@@ -206,9 +224,11 @@
   .chip-low { background: var(--chip-bg); color: var(--text-sub); }
   .chip-status { background: var(--chip-bg); color: var(--text-sub); }
   .chip-status.done { background: var(--accent-soft); color: var(--accent-strong); }
-  .chip-recurring { background: var(--accent-soft); color: var(--accent-strong); font-size: 0.68rem; padding: 2px 8px; }
   .row-actions { display: flex; flex-direction: column; gap: 5px; width: 100%; }
-  .row-actions button { width: 100%; padding: 5px 4px; font-size: 0.7rem; border-radius: var(--radius-block); white-space: nowrap; }
+  .row-actions button {
+    width: 100%; box-sizing: border-box; padding: 5px 2px; font-size: 0.7rem; border-radius: var(--radius-block);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* フォントの差でボタンの外にはみ出さないよう保険を掛ける */
+  }
   .empty { color: var(--text-sub); text-align: center; padding: 40px 0; font-size: 0.9rem; }
   /* ===== ヒント（※注記）の共通表示：details/summaryで折りたたみ、既定は非表示にしてノイズを減らす ===== */
   .hint { margin-top: var(--space-3); }
@@ -233,10 +253,9 @@
   .hint-footer { margin-top: var(--space-7); }
   .drag-handle {
     cursor: grab; color: var(--text-sub); text-align: center; width: 18px; font-size: 1.3rem;
-    user-select: none; border-radius: 6px; transition: background-color .1s ease, color .1s ease;
+    user-select: none;
     touch-action: none; /* トラックパッド/タッチでのスクロール誤動作を防ぎ、ポインタードラッグを優先させる */
   }
-  .drag-handle:not(.disabled):hover { background: var(--accent-soft); color: var(--accent-strong); }
   .drag-handle:not(.disabled):active { cursor: grabbing; }
   .drag-handle.disabled { cursor: default; opacity: 0.3; }
   tr.dragging { opacity: 0.4; }
@@ -244,6 +263,14 @@
   .category-row.dragging { opacity: 0.4; }
   .category-row.drag-over { box-shadow: inset 0 2px 0 var(--accent), inset 0 -2px 0 var(--accent); border-radius: var(--radius-block); }
   .category-drag-handle { width: 16px; font-size: 1.1rem; flex-shrink: 0; }
+  .category-type-toggle { display: flex; gap: 4px; flex-shrink: 0; }
+  .category-type-btn {
+    padding: 6px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--card-alt);
+    color: var(--text-sub); font-size: 0.76rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .category-type-btn:hover { color: var(--text); }
+  .category-type-btn.active { background: var(--accent); color: #fff8ec; border-color: var(--accent); }
   #categoryRows { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); }
   .category-add-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
   /* .field inputと共通の見た目のテキスト入力（フォーム外＝カテゴリ管理タブなどで使う） */
@@ -254,41 +281,6 @@
   }
   .text-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
-  /* ===== テンプレート管理タブ ===== */
-  #templateList { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-4); }
-  .template-card { background: var(--card-alt); border: 1px solid var(--border); border-radius: var(--radius-panel); padding: var(--space-4); }
-  .template-card-header { display: flex; gap: var(--space-2); align-items: center; margin-bottom: var(--space-3); }
-  .template-card-header .template-rename-input { flex: 1; min-width: 120px; font-weight: 700; }
-  .template-items { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-3); }
-  .template-item-row {
-    display: flex; align-items: center; gap: var(--space-2); padding: 7px 10px;
-    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-block); font-size: 0.85rem;
-  }
-  .template-item-time-badge {
-    font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent-strong);
-    background: var(--accent-soft); border-radius: 999px; padding: 2px 9px; flex-shrink: 0; font-size: 0.78rem;
-  }
-  .template-item-title-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .template-item-meta { color: var(--text-sub); font-size: 0.76rem; flex-shrink: 0; white-space: nowrap; }
-  .template-empty-items { color: var(--text-sub); font-size: 0.82rem; padding: 4px 2px; }
-  .template-add-item-row { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
-  .template-add-item-row input, .template-add-item-row select {
-    padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius-control);
-    background: var(--bg); color: var(--text); font-size: 0.84rem;
-  }
-  .template-add-item-row .template-item-title { flex: 1 1 140px; min-width: 100px; }
-  .template-add-item-row .template-item-time { width: 110px; }
-
-  /* ===== スケジュールカードのテンプレート適用 ===== */
-  .template-apply-row {
-    display: flex; gap: var(--space-2); align-items: center; margin-bottom: var(--space-4);
-    padding-bottom: var(--space-4); border-bottom: 1px dashed var(--border);
-  }
-  .template-apply-row select {
-    flex: 1; min-width: 0; padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius-control);
-    background: var(--bg); color: var(--text); font-size: 0.84rem;
-  }
-  .template-apply-row .btn { flex-shrink: 0; padding: 7px 12px; font-size: 0.8rem; }
   #newCategoryInput { flex: 1; min-width: 160px; }
   .filters-hint { color: var(--text-sub); font-size: 0.76rem; }
   .filters-note { margin-bottom: var(--space-4); } /* リストやテーブルの直前に置く説明文の共通の間隔 */
@@ -332,8 +324,16 @@
     margin-bottom: var(--space-5); padding-bottom: var(--space-3); border-bottom: 1px solid var(--border);
   }
   .schedule-card-header h2 { margin: 0; padding-bottom: 0; border-bottom: none; }
-  .schedule-date-nav { display: flex; align-items: center; gap: 6px; }
+  .schedule-work-load {
+    display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85rem;
+    margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 1px dashed var(--border);
+  }
+  .schedule-work-load .pct { font-weight: 700; font-size: 0.95rem; letter-spacing: -.01em; }
+  .schedule-date-nav { display: flex; align-items: center; gap: 6px; margin-bottom: var(--space-4); flex-wrap: wrap; }
   .schedule-date-nav .btn { padding: 7px 12px; font-size: 0.8rem; }
+  .schedule-actions { display: flex; align-items: center; gap: 6px; margin-bottom: var(--space-4); flex-wrap: wrap; }
+  .schedule-actions .btn { padding: 7px 12px; font-size: 0.8rem; }
+  .schedule-clipboard-hint { font-size: 0.76rem; color: var(--text-sub); }
   .schedule-date-nav input[type="date"] {
     padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius-control);
     background: var(--bg); color: var(--text); font-size: 0.82rem;
@@ -345,7 +345,13 @@
   .schedule-date-weekday.is-sat { color: var(--accent-strong); background: var(--accent-soft); }
   .schedule-date-weekday.is-sun { color: var(--danger); background: var(--danger-soft); }
   .schedule-date-weekday.is-today { box-shadow: 0 0 0 1.5px var(--accent) inset; }
-  .schedule-outer { display: flex; }
+  .schedule-outer {
+    display: flex; max-height: 640px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--accent) var(--chip-bg);
+  }
+  .schedule-outer::-webkit-scrollbar { width: 10px; }
+  .schedule-outer::-webkit-scrollbar-track { background: var(--chip-bg); }
+  .schedule-outer::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 999px; border: 2px solid var(--chip-bg); }
   .schedule-hours { position: relative; width: 46px; flex-shrink: 0; }
   .schedule-hours .hour-label {
     position: absolute; right: 8px; transform: translateY(-50%);
@@ -373,11 +379,21 @@
   .schedule-block.sb-dragging {
     cursor: grabbing; z-index: 20; box-shadow: 0 6px 18px -4px rgba(41, 30, 12, 0.35); opacity: 0.92;
   }
+  .schedule-block.sb-resizing { z-index: 20; box-shadow: 0 6px 18px -4px rgba(41, 30, 12, 0.35); }
+  /* 上下の端をつかむと長さを変更できる（Googleカレンダーのリサイズと同じ操作感） */
+  .sb-resize-handle { position: absolute; left: 0; right: 0; height: 6px; cursor: ns-resize; touch-action: none; z-index: 2; }
+  .sb-resize-handle::before {
+    content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 22px; height: 3px; border-radius: 999px; background: currentColor; opacity: 0;
+    transition: opacity .12s ease;
+  }
+  .schedule-block:hover .sb-resize-handle::before, .schedule-block.sb-resizing .sb-resize-handle::before { opacity: .5; }
+  .sb-resize-top { top: 0; }
+  .sb-resize-bottom { bottom: 0; }
   /* flexboxではなく単一行テキストとして省略させる。長いタイトルでもブロック外へはみ出さない */
   .schedule-block .sb-row { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .schedule-block .sb-title { font-weight: 700; }
   .schedule-block .sb-time { font-size: 0.68rem; opacity: .85; margin-left: 5px; }
-  .schedule-block .chip-recurring { margin-left: 5px; vertical-align: 1px; }
   .schedule-block.imp-high { background: var(--danger-soft); border-left-color: var(--danger); color: var(--danger); }
   .schedule-block.imp-mid { background: var(--warn-soft); border-left-color: var(--warn); color: var(--warn); }
   .schedule-block.imp-low { background: var(--chip-bg); border-left-color: var(--text-sub); color: var(--text-sub); }
@@ -445,8 +461,6 @@
     .card { padding: 16px 14px; }
     .form-grid { grid-template-columns: 1fr; }
     .field.wide { grid-column: span 1; }
-    .btn-row { flex-direction: column; }
-    .btn-row .btn { width: 100%; }
     .filters { gap: 8px; }
     .filters select { flex: 1 1 auto; min-width: 0; }
     #exportIcsBtn { width: 100%; }
@@ -462,87 +476,82 @@
 
 <div class="page">
 
-<h1>スケジュール＆キャパ管理</h1>
+<div class="app-header">
+  <h1>スケジュール＆キャパ管理</h1>
+  <div class="app-header-actions">
+    <button class="btn btn-secondary" id="settingsToggleBtn">⚙️ 設定</button>
+    <span id="gcalStatus" class="filters-hint">Googleカレンダー未連携</span>
+    <button class="btn btn-secondary" id="gcalConnectBtn">連携する</button>
+  </div>
+</div>
 <div class="sub">データはこの端末のブラウザ内だけに保存されます（外部送信なし）</div>
 
-<div class="grid">
-  <div class="card">
-    <h2>📊 今日・今週のキャパ消費</h2>
-    <div class="cap-row">
-      <div class="cap-label"><span>今日・時間のキャパ</span><span class="pct" id="todayPct">0%</span></div>
-    </div>
-    <div class="cap-row">
-      <div class="cap-label"><span>今日・負荷のキャパ</span><span class="pct" id="todayLoadPct">0%</span></div>
-    </div>
-    <div class="cap-row">
-      <div class="cap-label"><span>今週・時間のキャパ</span><span class="pct" id="weekPct">0%</span></div>
-    </div>
+<div class="card card-secondary" id="settingsPanel" style="display:none;">
+  <h2>⚙️ 設定</h2>
+  <div class="settings-row">
+    <span>テーマ</span>
+    <select id="themeSelect">
+      <option value="system">システムに合わせる</option>
+      <option value="light">ライト</option>
+      <option value="dark">ダーク</option>
+    </select>
   </div>
-  <div class="card card-secondary">
-    <h2>⚙️ 稼働可能時間の設定</h2>
-    <div class="settings-row">
-      <span>1日あたり</span>
-      <input type="number" id="dailyCap" min="0" step="0.5">
-      <span>時間</span>
-    </div>
-    <div class="settings-row">
-      <span>1週間あたり</span>
-      <input type="number" id="weeklyCap" min="0" step="0.5">
-      <span>時間</span>
-    </div>
-    <div class="settings-row">
-      <span>1日の負荷キャパ</span>
-      <input type="number" id="dailyLoadCap" min="0" step="10">
-      <span>%</span>
-    </div>
-    <div class="settings-row divider">
-      <span>通知（何分前）</span>
-      <select id="reminderMinutes">
-        <option value="0">通知なし</option>
-        <option value="5">5分前</option>
-        <option value="10">10分前</option>
-        <option value="15">15分前</option>
-        <option value="30">30分前</option>
-        <option value="60">1時間前</option>
-        <option value="1440">1日前</option>
-      </select>
-    </div>
-    <div class="settings-row">
-      <span>稼働時間帯</span>
-      <input type="time" id="workStart" step="900"> 〜 <input type="time" id="workEnd" step="900">
-    </div>
-    <button class="btn btn-secondary" id="saveSettingsBtn">設定を保存</button>
-    <div class="settings-row divider-strong">
-      <span>Googleカレンダー連携</span>
-      <span id="gcalStatus" class="filters-hint">未連携</span>
-      <button class="btn btn-secondary" id="gcalConnectBtn">連携する</button>
-    </div>
-    <details class="hint">
-      <summary>設定に関するヒント</summary>
-      <div class="hint-body">
-        ・連携すると、確認なしで直接Googleカレンダーに追加できるようになります（未連携でも今まで通り使えます）<br>
-        ・通知は「まとめてカレンダーに追加」でのみ反映されます<br>
-        ・開始時刻未入力のタスクを詰めていく際、この稼働時間帯からはみ出す場合は翌日の開始時刻へ繰り越します
-      </div>
-    </details>
+  <div class="settings-row">
+    <span>仕事の負荷キャパ</span>
+    <input type="number" id="workLoadCap" min="0" step="10">
+    <span>%</span>
   </div>
+  <div class="settings-row">
+    <span>通知（何分前）</span>
+    <select id="reminderMinutes">
+      <option value="0">通知なし</option>
+      <option value="5">5分前</option>
+      <option value="10">10分前</option>
+      <option value="15">15分前</option>
+      <option value="30">30分前</option>
+      <option value="60">1時間前</option>
+      <option value="1440">1日前</option>
+    </select>
+  </div>
+  <button class="btn btn-secondary" id="saveSettingsBtn">設定を保存</button>
+  <div class="settings-row" style="margin-top: var(--space-4); flex-wrap: wrap;">
+    <span>データのバックアップ</span>
+    <button class="btn btn-secondary" id="exportDataBtn">💾 エクスポート</button>
+    <button class="btn btn-secondary" id="importDataBtn">📂 インポート</button>
+    <input type="file" id="importDataInput" accept="application/json" style="display:none;">
+  </div>
+  <details class="hint">
+    <summary>設定に関するヒント</summary>
+    <div class="hint-body">
+      ・連携すると、確認なしで直接Googleカレンダーに追加できるようになります（未連携でも今まで通り使えます）<br>
+      ・通知は「まとめてカレンダーに追加」でのみ反映されます<br>
+      ・開始時刻未入力のタスクを詰めていく際、0:00〜24:00に収まらない場合は翌日の0:00へ繰り越します<br>
+      ・データはURL（file:///…とhttp://localhost:…など）ごとに別々に保存されます。別のURLに移したい時は、元のURLで💾エクスポートしてファイルを保存し、移した先のURLで📂インポートしてください
+    </div>
+  </details>
 </div>
 
 <div class="schedule-list-row">
 <div class="card schedule-card">
   <div class="schedule-card-header">
     <h2>🕐 スケジュール</h2>
-    <div class="schedule-date-nav">
-      <button class="btn btn-secondary" id="scheduleDatePrev" title="前の日">◀</button>
-      <input type="date" id="scheduleDateInput">
-      <span class="schedule-date-weekday" id="scheduleDateWeekday"></span>
-      <button class="btn btn-secondary" id="scheduleDateNext" title="次の日">▶</button>
-      <button class="btn btn-secondary" id="scheduleDateToday">今日</button>
-    </div>
   </div>
-  <div class="template-apply-row">
-    <select id="templateApplySelect"></select>
-    <button class="btn btn-cal" id="applyTemplateBtn">この日に適用</button>
+  <div class="schedule-work-load">
+    <span>仕事の負荷</span>
+    <span class="pct" id="workLoadPct">0% / 0%（0%）</span>
+  </div>
+  <div class="schedule-date-nav">
+    <button class="btn btn-secondary" id="scheduleDatePrev" title="前の日">◀</button>
+    <input type="date" id="scheduleDateInput">
+    <span class="schedule-date-weekday" id="scheduleDateWeekday"></span>
+    <button class="btn btn-secondary" id="scheduleDateNext" title="次の日">▶</button>
+  </div>
+  <div class="schedule-actions">
+    <button class="btn btn-secondary" id="scheduleSaveBtn" title="現在の内容をすぐに保存します（通常は自動保存されています）">💾 保存</button>
+    <button class="btn btn-secondary" id="scheduleCopyBtn" title="表示中の日のスケジュールをコピーします">📋 コピー</button>
+    <button class="btn btn-secondary" id="schedulePasteBtn" title="コピーしたスケジュールを表示中の日に貼り付けます">📥 ペースト</button>
+    <span class="schedule-clipboard-hint" id="scheduleClipboardHint"></span>
+    <button class="btn btn-cal" id="scheduleGcalBtn" title="表示中の日のスケジュールに表示されている日程・タスクを、そのままカレンダーに追加します">☁️ この日をカレンダーに追加</button>
   </div>
   <div class="schedule-outer">
     <div class="schedule-hours" id="scheduleHours"></div>
@@ -553,10 +562,14 @@
     <summary>スケジュールの見方・操作のヒント</summary>
     <div class="hint-body">
       ・開始時刻が未設定のタスクは、一覧の表示順に沿って（「まとめてカレンダーに追加」と同じ考え方で）仮に埋めた時間で表示します<br>
-      ・タスク一覧でチェックを入れると、選択中の日付に関わらずそのタスクも表示されます<br>
-      ・繰り返しタスクはここには自動表示されません（今日・今週のキャパ消費には引き続き反映されます）。表示したい場合は一覧でチェックを入れてください<br>
-      ・ブロックはドラッグで時刻変更、右クリックでスケジュールから外せます（タスク一覧からは削除されません）<br>
-      ・決まった1日分の予定は「🗂️テンプレート」タブで登録しておくと、見たい日を選んでから「この日に適用」で一括登録できます
+      ・タスク一覧でチェックを入れると、開始日に関わらず今表示中の日にそのタスクも表示されます。日付ナビで別の日に移動すると、そちらの日にも付いてきます（チェックを外すまで続きます）<br>
+      ・ブロックはドラッグで時刻変更、上下の端をつかむとGoogleカレンダーのように長さ（見積もり時間）を変更できます、右クリックで「複製」「スケジュールから外す」を選べます（通常のタスクは外してもタスク一覧からは削除されません。📥ペーストで追加した分はタスク一覧に出ないため、外すと削除されます）<br>
+      ・長さは見積もり時間そのものを変えるため、複製した時刻が他にもある場合はそちらの長さも一緒に変わります<br>
+      ・同じタスクを1日に2回入れたい時は、ブロックを右クリックして「複製」を選んでください。その日の空いている時間に自動で複製が現れます（タスク一覧は増えません。複製された時間はブロックをドラッグして自由に調整できます）<br>
+      ・「仕事の負荷」は、上に表示されている予定のうちカテゴリが「仕事」のものだけを合計した値です（複製した分も含みます。上限は⚙️設定の「仕事の負荷キャパ」）<br>
+      ・データは操作のたびに自動保存されますが、💾保存で明示的に保存を確定できます<br>
+      ・📋コピーで表示中の日のスケジュールを一時的にコピーし、別の日に切り替えて📥ペーストすると、その日にまとめて複製されます（複製した分も含めてコピーされます。コピー内容は次にコピーするまで保持されます。ペーストで増えたタスクはタスク一覧には出ません）<br>
+      ・☁️「この日をカレンダーに追加」は、チェックでの選択に関わらず、今このスケジュールに表示されている日程をそのままGoogleカレンダーに追加します（📥ペーストで増えた分・複製した分も含みます）
     </div>
   </details>
 </div>
@@ -610,66 +623,36 @@
       <select id="f-estimate"></select>
     </div>
     <div class="field">
-      <label>状態</label>
-      <select id="f-status">
-        <option value="not_started" selected>未着手</option>
-        <option value="in_progress">進行中</option>
-        <option value="done">完了</option>
-        <option value="on_hold">保留</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>繰り返し</label>
-      <select id="f-recurring">
-        <option value="none" selected>なし</option>
-        <option value="daily">毎日</option>
-        <option value="weekdays">仕事の日（平日・祝日を除く）</option>
-        <option value="weekend_holiday">休日（土日・祝日）</option>
-      </select>
-    </div>
-    <div class="field">
       <label>カテゴリ（任意）</label>
       <select id="f-category"></select>
     </div>
-  </div>
-  <div class="form-dates">
-    <div class="form-section-label">日程</div>
-    <div class="form-grid">
-      <div class="field">
-        <label id="start-label">開始日</label>
-        <input type="date" id="f-start-date">
-      </div>
-      <div class="field">
-        <label>時刻</label>
-        <input type="time" id="f-time" step="900">
-      </div>
-      <div class="field">
-        <label>終了日（任意）</label>
-        <input type="date" id="f-deadline">
-      </div>
+    <div class="field">
+      <label id="start-label">開始日</label>
+      <input type="date" id="f-start-date">
     </div>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-primary" id="addBtn">追加する</button>
+    <div class="field">
+      <label>時刻</label>
+      <input type="time" id="f-time" step="900">
+    </div>
+    <div class="field">
+      <label>終了日（任意）</label>
+      <input type="date" id="f-deadline">
+    </div>
+    <div class="field field-btn">
+      <label>&nbsp;</label>
+      <button class="btn btn-primary" id="addBtn">追加する</button>
+    </div>
   </div>
 </div>
 
 <div class="card">
   <div class="tab-row">
     <button class="tab-btn active" data-tab="tasks">📋 タスク一覧</button>
-    <button class="tab-btn" data-tab="templates">🗂️ テンプレート</button>
     <button class="tab-btn" data-tab="categories">🏷️ カテゴリ管理</button>
   </div>
 
   <div id="tasksTabPanel">
   <div class="filters">
-    <select id="filterStatus">
-      <option value="all">状態：すべて</option>
-      <option value="not_started">未着手</option>
-      <option value="in_progress">進行中</option>
-      <option value="done">完了</option>
-      <option value="on_hold">保留</option>
-    </select>
     <select id="sortBy">
       <option value="start">並び順：開始日時</option>
       <option value="importance">並び順：優先度</option>
@@ -691,10 +674,8 @@
       <col style="width:64px;">
       <col style="width:80px;">
       <col style="width:88px;">
-      <col style="width:92px;">
       <col style="width:215px;">
-      <col style="width:110px;">
-      <col style="width:104px;">
+      <col style="width:124px;">
     </colgroup>
     <thead>
       <tr>
@@ -704,9 +685,7 @@
         <th>優先度</th>
         <th>負荷</th>
         <th>見積もり</th>
-        <th>状態</th>
         <th>開始日〜終了日</th>
-        <th>繰り返し</th>
         <th>操作</th>
       </tr>
     </thead>
@@ -716,20 +695,9 @@
   <div class="empty" id="emptyMsg" style="display:none;">タスクがまだありません。上のフォームから追加してください。</div>
   </div>
 
-  <div id="templatesTabPanel" style="display:none;">
-    <div class="filters-hint filters-note">
-      ※決まった1日分の予定（時刻・見積もりなど）をテンプレートとして登録しておくと、「スケジュール」で見たい日を選んでから「この日に適用」を押すだけで、その日の予定をまとめて登録できます。
-    </div>
-    <div id="templateList"></div>
-    <div class="category-add-row">
-      <input type="text" id="newTemplateInput" class="text-input" placeholder="新しいテンプレート名（例：平日）">
-      <button class="btn btn-primary" id="addTemplateBtn">追加</button>
-    </div>
-  </div>
-
   <div id="categoriesTabPanel" style="display:none;">
     <div class="filters-hint filters-note">
-      ※ここで登録したカテゴリだけが、タスクのカテゴリ欄で選べます。名前を変更すると、そのカテゴリを使っている全タスクにも反映されます。
+      ※ここで登録したカテゴリだけが、タスクのカテゴリ欄で選べます。名前を変更すると、そのカテゴリを使っている全タスクにも反映されます。各カテゴリの「仕事／プライベート」ボタンで区分を切り替えられます（「仕事の負荷」の集計にはここで「仕事」にしたカテゴリだけが使われます）。
     </div>
     <div id="categoryRows"></div>
     <div class="category-add-row">
@@ -772,6 +740,11 @@
   <button class="btn btn-secondary" id="undoToastBtn">元に戻す</button>
 </div>
 
+<div class="context-menu" id="scheduleContextMenu" style="display:none;">
+  <button type="button" data-menu-action="duplicate">📄 複製（空いている時間に追加）</button>
+  <button type="button" data-menu-action="unschedule">✕ スケジュールから外す</button>
+</div>
+
 <script>
 const STORAGE_KEY = "workCapacityApp_v1";
 
@@ -780,7 +753,7 @@ function loadData() {
   if (raw) {
     try { return JSON.parse(raw); } catch (e) { /* fallthrough */ }
   }
-  return { settings: { dailyCapacityHours: 8, weeklyCapacityHours: 40, dailyLoadCapacity: 300, reminderMinutes: 10, workStart: "09:00", workEnd: "18:00" }, tasks: [] };
+  return { settings: { reminderMinutes: 10, workLoadCap: 100, theme: "system" }, tasks: [] };
 }
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -788,9 +761,19 @@ function saveData() {
 
 let state = loadData();
 if (state.settings.reminderMinutes === undefined) state.settings.reminderMinutes = 10;
-if (!state.settings.workStart) state.settings.workStart = "09:00";
-if (!state.settings.workEnd) state.settings.workEnd = "18:00";
-if (state.settings.dailyLoadCapacity === undefined) state.settings.dailyLoadCapacity = 300;
+if (state.settings.workLoadCap === undefined) state.settings.workLoadCap = 100;
+if (state.settings.theme === undefined) state.settings.theme = "system";
+
+// テーマ（ライト/ダーク/システムに合わせる）をhtml要素のdata-theme属性に反映する。
+// 「システムに合わせる」の時は属性を外し、CSS側のprefers-color-schemeにそのまま任せる
+function applyTheme(theme) {
+  if (theme === "dark" || theme === "light") {
+    document.documentElement.dataset.theme = theme;
+  } else {
+    delete document.documentElement.dataset.theme;
+  }
+}
+applyTheme(state.settings.theme); // 描画前に反映し、切り替わりのちらつきを防ぐ
 
 // 負荷は以前 大/中/小 の文字列で保存していたため、古いデータを0〜100の数値に変換しておく
 const LEGACY_LOAD_MAP = { large: 80, mid: 50, small: 20 };
@@ -809,24 +792,31 @@ function normalizeImportance5(value) {
   if (n > 5 || n === 0) return Math.max(1, Math.min(5, Math.round(n / 20) || 1)); // 0〜100%の値だったとみなす
   return Math.max(1, Math.min(5, Math.round(n)));
 }
-state.tasks.forEach(t => {
-  t.importance = normalizeImportance5(t.importance);
-  t.load = normalizePct(t.load, LEGACY_LOAD_MAP);
-});
-
-// カテゴリのマスタ一覧。以前は自由入力だったため、初回は既存タスクで使われているカテゴリを取り込んでおく
-if (!Array.isArray(state.categories)) {
-  state.categories = Array.from(new Set(state.tasks.map(t => t.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ja"));
+// 旧形式のデータ（負荷/優先度が文字列、カテゴリが自由入力の文字列配列など）を現在の形式に変換する。
+// ページ読み込み直後だけでなく、📂インポートで別のバックアップを丸ごと読み込んだ時にも
+// 同じ変換が必要なため関数にしている（インポート側で呼び忘れると、旧形式のバックアップを
+// 読み込んだ時だけ負荷・優先度が0扱いになったり、カテゴリの仕事/プライベート切り替えが壊れたりする）
+function migrateLegacyState() {
+  state.tasks.forEach(t => {
+    t.importance = normalizeImportance5(t.importance);
+    t.load = normalizePct(t.load, LEGACY_LOAD_MAP);
+  });
+  // カテゴリのマスタ一覧。{name, type}の配列で持つ（type: "work"=仕事 / "private"=プライベート）。
+  // 以前は自由入力の文字列配列だったため、無い場合は既存タスクで使われているカテゴリを取り込んでおく
+  if (!Array.isArray(state.categories)) {
+    state.categories = Array.from(new Set(state.tasks.map(t => t.category).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, "ja")).map(name => ({ name, type: "work" }));
+  } else {
+    // 文字列配列だった旧データを{name, type}に変換する
+    state.categories = state.categories.map(c => typeof c === "string" ? { name: c, type: "work" } : c);
+  }
 }
-// テンプレート（決まった1日分の予定をまとめて登録できる下書き）。id, name, items:[{id,title,time,estimate,importance,load,category}]
-if (!Array.isArray(state.templates)) {
-  state.templates = [];
-}
-
+migrateLegacyState();
 let selectedIds = new Set();
 let draggedId = null;
 let scheduleViewDate = new Date(); // 「スケジュール」で表示中の日付（日付ナビで切り替える。既定は今日）
 let scheduleDrag = null; // スケジュールのブロックをドラッグして時刻変更する際の作業用状態
+let scheduleLastRenderedDateStr = null; // 直近に描画した表示日（変わった時だけ自動スクロールするための記録）
 let pendingUndo = null; // { undo: fn } 直前の操作を取り消す処理（「元に戻す」トースト用）
 let undoToastTimer = null;
 
@@ -865,22 +855,20 @@ function deleteTaskWithUndo(task) {
 }
 
 // タスクを「スケジュール」の表示からだけ外す（一覧からは消さない）。スケジュール右クリック用。
-// チェックで表示していた場合はチェックを外すだけ、繰り返し／開始日で表示していた場合はそれらをクリアして未スケジュール状態に戻す。
+// チェックで表示していた場合はチェックを外すだけ、開始日で表示していた場合はそれをクリアして未スケジュール状態に戻す。
 function unscheduleTaskWithUndo(task) {
-  const prev = { start: task.start, time: task.time, recurring: task.recurring, wasSelected: selectedIds.has(task.id) };
+  const prev = { start: task.start, time: task.time, wasSelected: selectedIds.has(task.id) };
   if (prev.wasSelected) {
     selectedIds.delete(task.id);
   } else {
     task.start = "";
     task.time = "";
-    task.recurring = "none";
   }
   saveData();
   renderAll();
   showUndoToast(`「${task.title}」をスケジュールから外しました`, () => {
     task.start = prev.start;
     task.time = prev.time;
-    task.recurring = prev.recurring;
     if (prev.wasSelected) selectedIds.add(task.id);
     saveData();
     renderAll();
@@ -888,7 +876,6 @@ function unscheduleTaskWithUndo(task) {
 }
 
 const statusLabel = { not_started: "未着手", in_progress: "進行中", done: "完了", on_hold: "保留" };
-const recurringLabel = { daily: "毎日", weekdays: "仕事の日", weekend_holiday: "休日" };
 
 // 日本の祝日一覧（振替休日・国民の休日を含む）。出典: 内閣府発表分に基づくデータ（2026年・2027年分）。
 // ローカル完結の方針のため外部APIは使わず埋め込み。年が変わったら都度この一覧を更新してください。
@@ -922,14 +909,6 @@ function isHoliday(date) {
 function isWorkday(date) {
   return isWeekday(date) && !isHoliday(date);
 }
-// 繰り返し設定をGoogleカレンダー/ics用のRRULEへ変換する。
-// 「仕事の日」「休日（土日祝）」はRRULEだけでは祝日を厳密に表現できないため、曜日ベースの近似（土日祝→土日のみ）で代用する。
-function recurringToRRule(recurring) {
-  if (recurring === "daily") return "RRULE:FREQ=DAILY";
-  if (recurring === "weekdays") return "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR";
-  if (recurring === "weekend_holiday") return "RRULE:FREQ=WEEKLY;BYDAY=SA,SU";
-  return "";
-}
 
 function fmtDate(iso) {
   if (!iso) return "-";
@@ -938,48 +917,15 @@ function fmtDate(iso) {
   return d.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
 }
 
-function startOfWeek(date) {
-  const d = new Date(date);
-  const day = (d.getDay() + 6) % 7; // 月曜=0
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - day);
-  return d;
-}
-function endOfWeek(date) {
-  const s = startOfWeek(date);
-  const e = new Date(s);
-  e.setDate(e.getDate() + 7);
-  return e;
-}
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-function computeCapacity() {
-  const now = new Date();
-  const weekStart = startOfWeek(now);
-  const weekEnd = endOfWeek(now);
-  const todayIsWorkday = isWorkday(now);
-  let todayHours = 0, weekHours = 0, todayLoad = 0;
-  for (const t of state.tasks) {
-    const est = Number(t.estimate) || 0;
-    const load = Number(t.load) || 0;
-    const recurring = t.recurring || "none";
-    if (recurring !== "none") {
-      // 繰り返しタスクは「今日のキャパ」にのみ反映する（週次キャパ・ガントチャートには含めない）
-      const appliesToday = recurring === "daily"
-        || (recurring === "weekdays" && todayIsWorkday)
-        || (recurring === "weekend_holiday" && !todayIsWorkday);
-      if (appliesToday) { todayHours += est; todayLoad += load; }
-      continue;
-    }
-    if (!t.start) continue;
-    const d = new Date(t.start + "T00:00:00");
-    if (isNaN(d)) continue;
-    if (isSameDay(d, now)) { todayHours += est; todayLoad += load; }
-    if (d >= weekStart && d < weekEnd) weekHours += est;
-  }
-  return { todayHours, weekHours, todayLoad };
+// 設定パネルの入力欄に、保存済みの設定値を反映する
+function syncSettingsForm() {
+  document.getElementById("reminderMinutes").value = state.settings.reminderMinutes;
+  document.getElementById("workLoadCap").value = state.settings.workLoadCap;
+  document.getElementById("themeSelect").value = state.settings.theme || "system";
 }
 
 function pctColor(pct) {
@@ -988,31 +934,27 @@ function pctColor(pct) {
   return "var(--ok)";
 }
 
-function renderCapacity() {
-  const { todayHours, weekHours, todayLoad } = computeCapacity();
-  const dailyCap = Number(state.settings.dailyCapacityHours) || 0;
-  const weeklyCap = Number(state.settings.weeklyCapacityHours) || 0;
-  const dailyLoadCap = Number(state.settings.dailyLoadCapacity) || 0;
-  const todayPct = dailyCap > 0 ? Math.round((todayHours / dailyCap) * 100) : 0;
-  const weekPct = weeklyCap > 0 ? Math.round((weekHours / weeklyCap) * 100) : 0;
-  const todayLoadPct = dailyLoadCap > 0 ? Math.round((todayLoad / dailyLoadCap) * 100) : 0;
-
-  const todayPctEl = document.getElementById("todayPct");
-  const todayLoadPctEl = document.getElementById("todayLoadPct");
-  const weekPctEl = document.getElementById("weekPct");
-  todayPctEl.textContent = `${todayHours}h / ${dailyCap}h（${todayPct}%）`;
-  todayPctEl.style.color = pctColor(todayPct);
-  todayLoadPctEl.textContent = `${todayLoad}% / ${dailyLoadCap}%（${todayLoadPct}%）`;
-  todayLoadPctEl.style.color = pctColor(todayLoadPct);
-  weekPctEl.textContent = `${weekHours}h / ${weeklyCap}h（${weekPct}%）`;
-  weekPctEl.style.color = pctColor(weekPct);
-
-  document.getElementById("dailyCap").value = state.settings.dailyCapacityHours;
-  document.getElementById("weeklyCap").value = state.settings.weeklyCapacityHours;
-  document.getElementById("dailyLoadCap").value = state.settings.dailyLoadCapacity;
-  document.getElementById("reminderMinutes").value = state.settings.reminderMinutes;
-  document.getElementById("workStart").value = state.settings.workStart;
-  document.getElementById("workEnd").value = state.settings.workEnd;
+// カテゴリが「仕事」区分のタスクのうち、表示中の日のスケジュールに実際に出ているものだけを対象に、負荷（%）を合計する
+function isWorkCategory(categoryName) {
+  if (!categoryName) return false;
+  const cat = state.categories.find(c => c.name === categoryName);
+  return !!cat && (cat.type || "work") === "work"; // マスタに無いカテゴリ（削除済みなど）は対象外
+}
+function renderWorkLoad() {
+  const workLoadPctEl = document.getElementById("workLoadPct");
+  if (!workLoadPctEl) return;
+  const relevant = getTodayTasksForSchedule(scheduleViewDate);
+  let workLoad = relevant.filter(t => isWorkCategory(t.category)).reduce((sum, t) => sum + (Number(t.load) || 0), 0);
+  // 複製で増えた追加の時刻（task.extraTimes）も、実際に時間を使う分だけ負荷を追加でカウントする
+  for (const t of relevant) {
+    if (isWorkCategory(t.category) && Array.isArray(t.extraTimes) && t.extraTimes.length) {
+      workLoad += t.extraTimes.length * (Number(t.load) || 0);
+    }
+  }
+  const cap = Number(state.settings.workLoadCap) || 0;
+  const pct = cap > 0 ? Math.round((workLoad / cap) * 100) : 0;
+  workLoadPctEl.textContent = `${workLoad}% / ${cap}%（${pct}%）`;
+  workLoadPctEl.style.color = pctColor(pct);
 }
 
 // 「開始日」(task.start, 日付のみ) と「時刻」(task.time) を組み合わせて実際の開始日時を作る。
@@ -1024,6 +966,11 @@ function taskStartEnd(task, fallbackDate = new Date()) {
   start.setHours(hh || 0, mm || 0, 0, 0);
   const end = new Date(start.getTime() + (Number(task.estimate) || 1) * 60 * 60 * 1000);
   return { start, end };
+}
+// taskStartEndと同じだが、task.timeの代わりに指定した時刻(timeStr)を使う。
+// 「複製」で増えた追加の時刻（task.extraTimes）の開始・終了を計算するために使う。
+function taskStartEndAt(task, timeStr, fallbackDate = new Date()) {
+  return taskStartEnd({ ...task, time: timeStr }, fallbackDate);
 }
 function taskDetails(task) {
   return [
@@ -1043,8 +990,6 @@ function googleCalendarUrl(task) {
     dates: `${fmtGCal(start)}/${fmtGCal(end)}`,
     details: taskDetails(task)
   });
-  const recur = recurringToRRule(task.recurring);
-  if (recur) params.set("recur", recur);
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
@@ -1120,14 +1065,17 @@ function updateGcalUI() {
   const statusEl = document.getElementById("gcalStatus");
   const btnEl = document.getElementById("gcalConnectBtn");
   const exportBtnEl = document.getElementById("exportIcsBtn");
+  const scheduleGcalBtnEl = document.getElementById("scheduleGcalBtn");
   if (isGcalConnected()) {
-    statusEl.textContent = "✅ 連携済み";
+    statusEl.textContent = "✅ Googleカレンダー連携済み";
     btnEl.textContent = "連携を解除";
     exportBtnEl.textContent = "選択した予定をまとめてGoogleカレンダーに直接追加";
+    scheduleGcalBtnEl.textContent = "☁️ この日をGoogleカレンダーに直接追加";
   } else {
-    statusEl.textContent = "未連携";
+    statusEl.textContent = "Googleカレンダー未連携";
     btnEl.textContent = "連携する";
     exportBtnEl.textContent = "選択した予定をまとめてカレンダーに追加（.ics）";
+    scheduleGcalBtnEl.textContent = "📅 この日をカレンダーに追加（.ics）";
   }
   renderTasks(); // 📅追加ボタンの見た目・挙動を連携状態に合わせて更新
 }
@@ -1136,21 +1084,20 @@ document.getElementById("gcalConnectBtn").addEventListener("click", () => {
   if (isGcalConnected()) disconnectGcal(); else connectGcal();
 });
 
-// 1件のタスクをGoogleカレンダーのイベントの形（Calendar API用JSON）に変換する
+// 1件のタスクをGoogleカレンダーのイベントの形（Calendar API用JSON）に変換する。
 function taskToGcalEvent(task, start, end) {
   const reminderMinutes = Number(state.settings.reminderMinutes) || 0;
-  const event = {
+  // dateTimeがZ(UTC)表記でも、timeZoneが無いと「Missing time zone definition for start time」(400)で拒否されることがあるため付与しておく
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return {
     summary: task.title || "(無題のタスク)",
     description: taskDetails(task),
-    start: { dateTime: start.toISOString() },
-    end: { dateTime: end.toISOString() },
+    start: { dateTime: start.toISOString(), timeZone },
+    end: { dateTime: end.toISOString(), timeZone },
     reminders: reminderMinutes > 0
       ? { useDefault: false, overrides: [{ method: "popup", minutes: reminderMinutes }] }
       : { useDefault: false }
   };
-  const recurRule = recurringToRRule(task.recurring);
-  if (recurRule) event.recurrence = [recurRule];
-  return event;
 }
 
 // Calendar APIへ直接1件追加する（確認画面なし）
@@ -1172,46 +1119,18 @@ function icsEscape(s) {
   return (s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 }
 
-function roundUpTo15(d) {
-  const ms = 15 * 60 * 1000;
-  return new Date(Math.ceil(d.getTime() / ms) * ms);
-}
-function parseHM(hm, fallbackH, fallbackM) {
-  if (!hm) return { h: fallbackH, m: fallbackM };
-  const [h, m] = hm.split(":").map(Number);
-  return { h: h || 0, m: m || 0 };
-}
-// dが稼働時間帯より前ならその日の開始時刻へ、稼働時間帯を過ぎていれば翌日の開始時刻へ繰り上げる。
-// （設定が不正=開始>=終了の場合は制限せずそのまま返す）
-function clampToWorkHours(d) {
-  const { h: sh, m: sm } = parseHM(state.settings.workStart, 9, 0);
-  const { h: eh, m: em } = parseHM(state.settings.workEnd, 18, 0);
-  if (sh * 60 + sm >= eh * 60 + em) return new Date(d);
-  let cur = new Date(d);
-  for (let guard = 0; guard < 400; guard++) {
-    const dayStart = new Date(cur); dayStart.setHours(sh, sm, 0, 0);
-    const dayEnd = new Date(cur); dayEnd.setHours(eh, em, 0, 0);
-    if (cur < dayStart) return dayStart;
-    if (cur >= dayEnd) { cur = new Date(dayStart); cur.setDate(cur.getDate() + 1); continue; }
-    return cur;
-  }
-  return cur;
-}
-
 // 時刻(time)が未入力のタスクは、渡された順（=一覧の表示順）に自動で穴埋めする。
-// 開始日(start)が設定されているタスクはその日の稼働時間帯から、
-// 開始日が未設定のタスクは基準日（省略時は「今日」）の稼働時間帯から、
+// 開始日(start)が設定されているタスクはその日の0:00から、
+// 開始日が未設定のタスクは基準日（省略時は「今日」）の0:00から、
 // それぞれ15分単位に丸めて見積もり時間ぶんずつ連続で詰めていく（日付ごとに別のカーソルを持つ）。
-// その日の終業時刻を超える場合は翌日の始業時刻へ繰り越す。時刻が入力済みのタスクはそのまま自身の時刻を使う。
+// 0:00〜24:00に収まらない場合は翌日の0:00へ繰り越す。時刻が入力済みのタスクはそのまま自身の時刻を使う。
 // また、「睡眠」のように既に時刻が確定しているタスクとは重ならないよう、自動で詰める位置をその終了時刻まで押し出す。
 function scheduleForExport(tasks, refDate = new Date()) {
   const pad = n => String(n).padStart(2, "0");
   const dateKeyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const todayKey = dateKeyOf(refDate);
-  const { h: sh, m: sm } = parseHM(state.settings.workStart, 9, 0);
-  const { h: eh, m: em } = parseHM(state.settings.workEnd, 18, 0);
 
-  // 既に時刻が確定しているタスク（繰り返しの「睡眠」など）が占有している時間帯を日付ごとに集めておく
+  // 既に時刻が確定しているタスク（「睡眠」など）が占有している時間帯を日付ごとに集めておく
   const occupiedByDate = {};
   for (const t of tasks) {
     if (!t.time) continue;
@@ -1234,10 +1153,7 @@ function scheduleForExport(tasks, refDate = new Date()) {
 
   const cursors = {}; // "YYYY-MM-DD" -> その日の次に空いている時刻(Date)
   function cursorFor(dateKey) {
-    if (!(dateKey in cursors)) {
-      // 今日も他の日と同様、0時（＝稼働時間帯の開始時刻）から詰めていく
-      cursors[dateKey] = clampToWorkHours(new Date(dateKey + "T00:00:00"));
-    }
+    if (!(dateKey in cursors)) cursors[dateKey] = new Date(dateKey + "T00:00:00"); // 0:00から詰めていく
     return cursors[dateKey];
   }
 
@@ -1246,12 +1162,11 @@ function scheduleForExport(tasks, refDate = new Date()) {
     if (!hasTime) {
       const dateKey = t.start || todayKey;
       const durationMs = (Number(t.estimate) || 1) * 60 * 60 * 1000;
-      let start = clampToWorkHours(cursorFor(dateKey));
-      start = clampToWorkHours(pushPastOccupied(dateKey, start, durationMs));
+      let start = pushPastOccupied(dateKey, cursorFor(dateKey), durationMs);
       let end = new Date(start.getTime() + durationMs);
-      const dayEnd = new Date(start); dayEnd.setHours(eh, em, 0, 0);
-      if (sh * 60 + sm < eh * 60 + em && end > dayEnd) {
-        start = new Date(start); start.setDate(start.getDate() + 1); start.setHours(sh, sm, 0, 0);
+      const dayEnd = new Date(start); dayEnd.setHours(24, 0, 0, 0); // その日の終わり(=翌日の0:00)
+      if (end > dayEnd) {
+        start = new Date(dayEnd); // 収まらなければ翌日の0:00から
         end = new Date(start.getTime() + durationMs);
       }
       cursors[dateKey] = end;
@@ -1272,8 +1187,35 @@ function buildIcs(tasks) {
     lines.push(`DTSTAMP:${now}`);
     lines.push(`DTSTART:${fmtGCal(start)}`);
     lines.push(`DTEND:${fmtGCal(end)}`);
-    const rrule = recurringToRRule(t.recurring);
-    if (rrule) lines.push(rrule);
+    lines.push(`SUMMARY:${icsEscape(t.title || "(無題のタスク)")}`);
+    if (details) lines.push(`DESCRIPTION:${icsEscape(details)}`);
+    if (reminderMinutes > 0) {
+      lines.push("BEGIN:VALARM");
+      lines.push(`TRIGGER:-PT${reminderMinutes}M`);
+      lines.push("ACTION:DISPLAY");
+      lines.push("DESCRIPTION:リマインダー");
+      lines.push("END:VALARM");
+    }
+    lines.push("END:VEVENT");
+  }
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+
+// buildIcsは「時刻未設定タスクの自動穴埋め」を内部でやり直してしまうため、
+// スケジュール表示のように「複製」で増えた分（extraTimes）まで含めて“見えている通り”に書き出したい場合はこちらを使う。
+// occurrences は getScheduledOccurrences() が返す { task, start, end, occKey } の配列。
+function buildIcsFromOccurrences(occurrences) {
+  const reminderMinutes = Number(state.settings.reminderMinutes) || 0;
+  const now = fmtGCal(new Date());
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//WorkCapacityApp//JA", "CALSCALE:GREGORIAN"];
+  for (const { task: t, start, end, occKey } of occurrences) {
+    const details = taskDetails(t);
+    lines.push("BEGIN:VEVENT");
+    lines.push(`UID:${occKey}@workcapacityapp`); // 複製分も含めて衝突しないよう、タスクIDではなくoccKeyを使う
+    lines.push(`DTSTAMP:${now}`);
+    lines.push(`DTSTART:${fmtGCal(start)}`);
+    lines.push(`DTEND:${fmtGCal(end)}`);
     lines.push(`SUMMARY:${icsEscape(t.title || "(無題のタスク)")}`);
     if (details) lines.push(`DESCRIPTION:${icsEscape(details)}`);
     if (reminderMinutes > 0) {
@@ -1301,22 +1243,15 @@ function downloadIcs(filename, content) {
   URL.revokeObjectURL(url);
 }
 
-function fmtStart(t) {
-  if (t.recurring === "daily") return `毎日 ${t.time || "--:--"}`;
-  if (t.recurring === "weekdays") return `仕事の日 ${t.time || "--:--"}`;
-  if (t.recurring === "weekend_holiday") return `休日(土日祝) ${t.time || "--:--"}`;
-  if (!t.start && !t.time) return "-";
-  return `${t.start ? fmtDate(t.start) : "日付未定"} ${t.time || "--:--"}`;
-}
 function sortKey(t) {
-  if (t.recurring && t.recurring !== "none") return "0000-00-00T" + (t.time || "99:99"); // 繰り返しタスクは一覧の先頭寄りに並べる
   return (t.start || "9999-99-99") + "T" + (t.time || "99:99");
 }
 
 function renderTasks() {
-  const filterStatus = document.getElementById("filterStatus").value;
   const sortBy = document.getElementById("sortBy").value;
-  let tasks = state.tasks.filter(t => filterStatus === "all" || t.status === filterStatus);
+  // 「ペースト」で追加されたタスク（scheduleOnly）はスケジュール表示専用で、
+  // タスク一覧タブには出さない（編集・削除はスケジュール上の右クリックからのみ行う）
+  let tasks = state.tasks.filter(t => !t.scheduleOnly);
 
   const orderMode = sortBy === "order";
   tasks = tasks.slice().sort((a, b) => {
@@ -1330,8 +1265,6 @@ function renderTasks() {
   const body = document.getElementById("taskBody");
   body.innerHTML = "";
   document.getElementById("emptyMsg").style.display = tasks.length ? "none" : "block";
-
-  const opt = (value, label, current) => `<option value="${value}" ${value === current ? "selected" : ""}>${label}</option>`;
 
   for (const t of tasks) {
     const tr = document.createElement("tr");
@@ -1358,22 +1291,12 @@ function renderTasks() {
           ${estimateOptions(t.estimate)}
         </select>
       </td>
-      <td>
-        <select class="inline-edit" data-id="${t.id}" data-field="status">
-          ${opt("not_started", "未着手", t.status)}${opt("in_progress", "進行中", t.status)}${opt("done", "完了", t.status)}${opt("on_hold", "保留", t.status)}
-        </select>
-      </td>
       <td class="start-cell">
         <div class="start-cell-row">
           <input type="date" class="inline-edit" data-id="${t.id}" data-field="start" value="${t.start || ""}">
           <input type="time" class="inline-edit" data-id="${t.id}" data-field="time" step="900" value="${t.time || ""}">
         </div>
         <input type="date" class="inline-edit" data-id="${t.id}" data-field="deadline" value="${t.deadline || ""}" title="終了日">
-      </td>
-      <td>
-        <select class="inline-edit" data-id="${t.id}" data-field="recurring">
-          ${opt("none", "なし", t.recurring || "none")}${opt("daily", "毎日", t.recurring || "none")}${opt("weekdays", "仕事の日", t.recurring || "none")}${opt("weekend_holiday", "休日", t.recurring || "none")}
-        </select>
       </td>
       <td>
         <div class="row-actions">
@@ -1420,12 +1343,20 @@ function estimateOptions(current) {
   }
   return html;
 }
-// カテゴリ：マスタ一覧（state.categories）から<option>群を作る（未設定用の空欄を先頭に含む）
+// カテゴリ：マスタ一覧（state.categories）から<option>群を作る（未設定用の空欄を先頭に含む）。
+// 「仕事」「プライベート」で見出しを分け、選ぶ時にどちらか一目で分かるようにする
 function categoryOptions(current) {
   const cur = current || "";
   let html = `<option value="" ${cur === "" ? "selected" : ""}>（なし）</option>`;
-  for (const c of state.categories) {
-    html += `<option value="${escapeHtml(c)}" ${c === cur ? "selected" : ""}>${escapeHtml(c)}</option>`;
+  const groups = [{ type: "work", label: "仕事" }, { type: "private", label: "プライベート" }];
+  for (const g of groups) {
+    const cats = state.categories.filter(c => (c.type || "work") === g.type);
+    if (!cats.length) continue;
+    html += `<optgroup label="${g.label}">`;
+    for (const c of cats) {
+      html += `<option value="${escapeHtml(c.name)}" ${c.name === cur ? "selected" : ""}>${escapeHtml(c.name)}</option>`;
+    }
+    html += `</optgroup>`;
   }
   return html;
 }
@@ -1450,12 +1381,11 @@ function readForm() {
     importance: Number(document.getElementById("f-importance").value) || 0,
     load: Number(document.getElementById("f-load").value) || 0,
     estimate: Number(document.getElementById("f-estimate").value) || 0.25,
-    status: document.getElementById("f-status").value,
-    start: document.getElementById("f-start-date").value, // 繰り返しの有無に関わらず、開始日は独立して持てる
+    status: "not_started", // 状態はフォームでは選ばず、追加時は常に「未着手」から始める
+    start: document.getElementById("f-start-date").value,
     time: document.getElementById("f-time").value,
     deadline: document.getElementById("f-deadline").value,
-    category: document.getElementById("f-category").value.trim(),
-    recurring: document.getElementById("f-recurring").value
+    category: document.getElementById("f-category").value.trim()
   };
 }
 function clearForm() {
@@ -1463,12 +1393,10 @@ function clearForm() {
   document.getElementById("f-importance").value = "3";
   document.getElementById("f-load").value = "50";
   document.getElementById("f-estimate").value = "1";
-  document.getElementById("f-status").value = "not_started";
   document.getElementById("f-start-date").value = "";
   document.getElementById("f-time").value = "";
   document.getElementById("f-deadline").value = "";
   document.getElementById("f-category").value = "";
-  document.getElementById("f-recurring").value = "none";
 }
 document.getElementById("f-estimate").innerHTML = estimateOptions(1);
 
@@ -1505,17 +1433,85 @@ document.getElementById("taskBody").addEventListener("click", (e) => {
 });
 
 document.getElementById("saveSettingsBtn").addEventListener("click", () => {
-  state.settings.dailyCapacityHours = Number(document.getElementById("dailyCap").value) || 0;
-  state.settings.weeklyCapacityHours = Number(document.getElementById("weeklyCap").value) || 0;
-  state.settings.dailyLoadCapacity = Number(document.getElementById("dailyLoadCap").value) || 0;
   state.settings.reminderMinutes = Number(document.getElementById("reminderMinutes").value) || 0;
-  state.settings.workStart = document.getElementById("workStart").value || "09:00";
-  state.settings.workEnd = document.getElementById("workEnd").value || "18:00";
+  state.settings.workLoadCap = Number(document.getElementById("workLoadCap").value) || 0;
   saveData();
-  renderAll();
+  renderWorkLoad();
 });
 
-document.getElementById("filterStatus").addEventListener("change", renderTasks);
+// テーマは選んだ瞬間に見た目を切り替えたい（数値系の設定と違い、保存ボタンを待たせると分かりにくいため）
+document.getElementById("themeSelect").addEventListener("change", (e) => {
+  state.settings.theme = e.target.value;
+  applyTheme(state.settings.theme);
+  saveData();
+});
+
+// 「エクスポート」＝タスク・カテゴリ・設定を丸ごとJSONファイルにダウンロードする（バックアップ、別URLへの移行用）
+document.getElementById("exportDataBtn").addEventListener("click", () => {
+  const pad = n => String(n).padStart(2, "0");
+  const now = new Date();
+  const filename = `schedule_backup_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}.json`;
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// 「インポート」＝エクスポートしたJSONファイルを読み込み、現在のデータを置き換える
+document.getElementById("importDataBtn").addEventListener("click", () => {
+  document.getElementById("importDataInput").click();
+});
+document.getElementById("importDataInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  e.target.value = ""; // 同じファイルを選び直しても毎回changeが発火するようにリセットしておく
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let imported;
+    try {
+      imported = JSON.parse(reader.result);
+    } catch (err) {
+      alert("ファイルの読み込みに失敗しました（JSON形式ではないようです）。");
+      return;
+    }
+    if (!imported || typeof imported !== "object" || !Array.isArray(imported.tasks)) {
+      alert("このファイルはバックアップデータの形式ではないようです。");
+      return;
+    }
+    const taskCount = imported.tasks.length;
+    if (!confirm(`${taskCount}件のタスクを読み込みます。このURLの現在のデータは上書きされます。よろしいですか？`)) return;
+
+    state = imported;
+    // 欠けている項目があれば補う（古い形式のバックアップとの互換性のため）
+    if (!state.settings) state.settings = {};
+    if (state.settings.reminderMinutes === undefined) state.settings.reminderMinutes = 10;
+    if (state.settings.workLoadCap === undefined) state.settings.workLoadCap = 100;
+    if (state.settings.theme === undefined) state.settings.theme = "system";
+    migrateLegacyState(); // 旧形式のバックアップ（負荷/優先度が文字列、カテゴリが文字列配列）でも読み込めるようにする
+    selectedIds = new Set();
+
+    saveData();
+    applyTheme(state.settings.theme);
+    renderAll();
+    syncSettingsForm();
+    alert(`${taskCount}件のタスクを読み込みました。`);
+  };
+  reader.readAsText(file);
+});
+
+// タイトル横の「⚙️ 設定」ボタンで、設定パネルの表示・非表示を切り替える
+document.getElementById("settingsToggleBtn").addEventListener("click", () => {
+  const panel = document.getElementById("settingsPanel");
+  const opening = panel.style.display === "none";
+  panel.style.display = opening ? "" : "none";
+  if (opening) syncSettingsForm();
+});
+
 document.getElementById("sortBy").addEventListener("change", renderTasks);
 
 document.getElementById("scheduleDateInput").addEventListener("change", (e) => {
@@ -1532,9 +1528,101 @@ document.getElementById("scheduleDateNext").addEventListener("click", () => {
   scheduleViewDate = new Date(scheduleViewDate); scheduleViewDate.setDate(scheduleViewDate.getDate() + 1);
   renderScheduleChart();
 });
-document.getElementById("scheduleDateToday").addEventListener("click", () => {
-  scheduleViewDate = new Date();
-  renderScheduleChart();
+
+/* ============ スケジュールの保存・コピー・ペースト ============ */
+// コピーは「クリップボード」としてlocalStorageに保持する（次にコピーするまで、別の日に移動しても・再読み込みしても残る）
+const SCHEDULE_CLIPBOARD_KEY = "workCapacityApp_scheduleClipboard_v1";
+
+function viewDateKey(d) {
+  const pad = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function loadScheduleClipboard() {
+  try { return JSON.parse(localStorage.getItem(SCHEDULE_CLIPBOARD_KEY) || "null") || []; }
+  catch (e) { return []; }
+}
+function updateClipboardHint() {
+  const clip = loadScheduleClipboard();
+  document.getElementById("scheduleClipboardHint").textContent = clip.length ? `📋 ${clip.length}件コピー中` : "";
+}
+
+// 「保存」＝通常は自動保存されているが、明示的に保存を確定したい場合向けのボタン（データは変わらずすぐ保存されるだけ）
+document.getElementById("scheduleSaveBtn").addEventListener("click", (e) => {
+  saveData();
+  const btn = e.currentTarget;
+  const prevText = btn.textContent;
+  btn.textContent = "✅ 保存しました";
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = prevText; btn.disabled = false; }, 1200);
+});
+
+// 「コピー」＝表示中の日にあるタスクの内容（タイトル・優先度・負荷・見積もり・カテゴリ・時刻）をクリップボードに保存する。
+// getTodayTasksForSchedule()は「チェックで一時的に乗せているだけの他の日のタスク」も含んでしまうため、
+// ここでは使わず、実際に開始日がその日になっているタスクだけを対象にする（そうしないとチェックしたタスクが
+// 意図せずコピー→ペーストで別の日にも複製されてしまう）
+document.getElementById("scheduleCopyBtn").addEventListener("click", () => {
+  const dateStr = viewDateKey(scheduleViewDate);
+  const tasks = state.tasks.filter(t => t.start === dateStr);
+  if (!tasks.length) { alert("表示中の日にはコピーする予定がありません。"); return; }
+  const clip = tasks.map(t => ({
+    title: t.title, importance: t.importance, load: t.load, estimate: t.estimate,
+    category: t.category, time: t.time,
+    extraTimes: Array.isArray(t.extraTimes) ? t.extraTimes.slice() : [] // 「複製」で増えた分も含めてコピーする
+  }));
+  localStorage.setItem(SCHEDULE_CLIPBOARD_KEY, JSON.stringify(clip));
+  updateClipboardHint();
+});
+
+// 「ペースト」＝クリップボードの内容を、表示中の日を開始日とする新しいタスクとしてまとめて追加する
+document.getElementById("schedulePasteBtn").addEventListener("click", () => {
+  const clip = loadScheduleClipboard();
+  if (!clip.length) { alert("コピーされたスケジュールがありません。先に📋コピーしてください。"); return; }
+  const targetDate = viewDateKey(scheduleViewDate);
+  const added = clip.map(c => ({
+    id: uid(), title: c.title, importance: c.importance, load: c.load, estimate: c.estimate,
+    status: "not_started", start: targetDate, time: c.time || "", deadline: "", category: c.category || "",
+    extraTimes: Array.isArray(c.extraTimes) ? c.extraTimes.slice() : [],
+    scheduleOnly: true // タスク一覧タブには出さず、スケジュール表示にだけ乗せる
+  }));
+  state.tasks.push(...added);
+  saveData();
+  renderAll();
+  const addedIds = new Set(added.map(t => t.id));
+  showUndoToast(`${added.length}件貼り付けました`, () => {
+    state.tasks = state.tasks.filter(t => !addedIds.has(t.id));
+    saveData();
+    renderAll();
+  });
+});
+
+updateClipboardHint();
+
+// 「この日をカレンダーに追加」＝チェックでの選択とは関係なく、表示中の日の「スケジュール」に
+// 実際に表示されている日程（複製で増えた分も含む）を、そのままGoogleカレンダーに追加する。
+document.getElementById("scheduleGcalBtn").addEventListener("click", async () => {
+  const occurrences = getScheduledOccurrences(scheduleViewDate);
+  if (!occurrences.length) { alert("この日にはカレンダーに追加する予定がありません。"); return; }
+
+  if (isGcalConnected()) {
+    const btn = document.getElementById("scheduleGcalBtn");
+    btn.disabled = true;
+    let okCount = 0;
+    const errors = [];
+    for (const { task, start, end } of occurrences) {
+      try {
+        await addEventToGcalDirect(task, start, end);
+        okCount++;
+      } catch (err) {
+        errors.push(`${task.title}: ${err.message}`);
+      }
+    }
+    btn.disabled = false;
+    alert(errors.length
+      ? `${okCount}件追加しました。\n以下は失敗しました：\n${errors.join("\n")}`
+      : `${okCount}件をGoogleカレンダーに直接追加しました。`);
+  } else {
+    downloadIcs(`schedule_${viewDateKey(scheduleViewDate)}.ics`, buildIcsFromOccurrences(occurrences));
+  }
 });
 
 function updateSelectedCount() {
@@ -1695,31 +1783,75 @@ function fmtHM(d) { return `${String(d.getHours()).padStart(2, "0")}:${String(d.
 /* ============ 今日のスケジュール（縦・1日タイムライン） ============ */
 
 // 指定日（省略時は今日）に該当するタスクを抽出（開始日がその日のものだけ）。
-// 繰り返しタスクは、キャパ計算には引き続き反映されるが、スケジュールには自動表示しない
-// （一覧でチェックを入れた時だけ、手動でその日のスケジュールに加えられる）。
 function getTodayTasksForSchedule(refDate = new Date()) {
   const pad = n => String(n).padStart(2, "0");
   const refStr = `${refDate.getFullYear()}-${pad(refDate.getMonth() + 1)}-${pad(refDate.getDate())}`;
   return state.tasks.filter(t => {
-    // チェックは「今日」だけの一時的な上乗せ表示。日付ナビで別日に移動しても付いてこないようにする
-    if (selectedIds.has(t.id) && isSameDay(refDate, new Date())) return true;
-    if (t.recurring && t.recurring !== "none") return false; // 繰り返しタスクは、開始日を持っていてもチェックなしでは表示しない
-    return t.start === refStr; // 開始日未設定の単発タスクは、対象日が定まらないためチャートには出さない
+    // チェックを入れたタスクは、開始日に関わらず「今表示中の日」に一時的に上乗せ表示する。
+    // 日付ナビで別の日に移動すれば、その移動先の日にも付いてくる（チェックを外すまで続く）
+    if (selectedIds.has(t.id)) return true;
+    return t.start === refStr; // 開始日未設定のタスクは、対象日が定まらないためチャートには出さない
   });
 }
 
-// 時間帯が重なるタスクは横に並べて表示するためのレーン割り当て（開始時刻順の貪欲法）
+// 指定日について、通常の予定（タスクごとに1つ）に加えて「複製」で増えた追加の時刻（task.extraTimes）も
+// 展開した、スケジュール表示用の項目一覧を返す。各項目にはブロックを一意に識別するoccKeyを持たせる
+// （同じタスクが複数回出てくるため、tasksのidだけでは1つのタスクの複数のブロックを区別できない）。
+function getScheduledOccurrences(refDate) {
+  const relevant = getTodayTasksForSchedule(refDate);
+  if (!relevant.length) return [];
+  const displayOrder = Array.from(document.querySelectorAll("#taskBody tr")).map(tr => tr.dataset.id);
+  // ペースト由来（scheduleOnly）のタスクはタスク一覧に出ないため、indexOfが常に-1になり、
+  // そのままだと「一覧の先頭」より前として扱われて時刻未設定タスクの自動穴埋めを必ず横取りしてしまう。
+  // 一覧に無いものは末尾側に回すことで、一覧の表示順を優先する
+  const idxOf = id => { const i = displayOrder.indexOf(id); return i === -1 ? Infinity : i; };
+  const ordered = relevant.slice().sort((a, b) => idxOf(a.id) - idxOf(b.id));
+  const scheduled = scheduleForExport(ordered, refDate);
+  const items = scheduled.map(item => ({ ...item, occKey: `${item.task.id}#p` }));
+  const refDateStr = viewDateKey(refDate);
+  for (const t of ordered) {
+    if (!Array.isArray(t.extraTimes) || !t.extraTimes.length) continue;
+    // 「複製」は本来の開始日でだけ表示する。タスク一覧のチェックで他の日に一時的に表示されているだけの
+    // 場合にまで出してしまうと、チェックした日すべてに複製が現れてしまう
+    if (t.start && t.start !== refDateStr) continue;
+    t.extraTimes.forEach((time, idx) => {
+      items.push({ task: t, ...taskStartEndAt(t, time, refDate), occKey: `${t.id}#e${idx}` });
+    });
+  }
+  return items;
+}
+
+// 時間帯が重なるタスクは横に並べて表示するためのレーン割り当て（開始時刻順の貪欲法）。
+// 重なっているタスク同士の「かたまり（クラスタ）」ごとにレーン数を数える。
+// クラスタをまたいだ全体最大値を使うと、重なりのない時間帯まで幅が狭くなってしまうため、
+// クラスタ単位で幅を決める（例：24時間分埋まっていても、実際に重なっている時間帯だけが2列になる）。
 function assignScheduleLanes(scheduled) {
   const sorted = scheduled.slice().sort((a, b) => a.start - b.start);
-  const laneEnds = [];
   const laneMap = {};
+  const laneCountMap = {};
+  let cluster = [];
+  let laneEnds = [];
+  let clusterEnd = -Infinity;
+
+  const flushCluster = () => {
+    const count = laneEnds.length || 1;
+    for (const item of cluster) laneCountMap[item.occKey] = count;
+    cluster = [];
+    laneEnds = [];
+  };
+
   for (const item of sorted) {
+    if (item.start >= clusterEnd) { flushCluster(); clusterEnd = item.end; }
+    else { clusterEnd = Math.max(clusterEnd, item.end); }
+
     let laneIdx = laneEnds.findIndex(end => end <= item.start);
     if (laneIdx === -1) { laneEnds.push(item.end); laneIdx = laneEnds.length - 1; }
     else { laneEnds[laneIdx] = item.end; }
-    laneMap[item.task.id] = laneIdx;
+    laneMap[item.occKey] = laneIdx;
+    cluster.push(item);
   }
-  return { laneMap, laneCount: laneEnds.length || 1 };
+  flushCluster();
+  return { laneMap, laneCountMap };
 }
 
 const SCHEDULE_PX_PER_HOUR = 96; // 15分刻みが見やすいよう、縦方向にゆったり取る（1時間=96px、15分=24px）
@@ -1746,28 +1878,21 @@ function renderScheduleChart() {
     weekdayEl.classList.toggle("is-today", isSameDay(scheduleViewDate, new Date()));
   }
 
+  const dateChanged = scheduleLastRenderedDateStr !== viewDateStr;
+  scheduleLastRenderedDateStr = viewDateStr;
+
+  // 予定が1件も無い日でも、24時間の枠自体は常に表示する（下の「予定はありません」の一文だけで済ませない）
   const relevant = getTodayTasksForSchedule(scheduleViewDate);
   emptyEl.style.display = relevant.length ? "none" : "block";
-  hoursEl.style.display = relevant.length ? "" : "none";
-  trackEl.style.display = relevant.length ? "" : "none";
-  if (!relevant.length) return;
+  renderWorkLoad();
 
-  // 「まとめてカレンダーに追加」と同じ考え方：一覧の表示順で、時刻未設定のものを自動的に埋める
-  const displayOrder = Array.from(document.querySelectorAll("#taskBody tr")).map(tr => tr.dataset.id);
-  const ordered = relevant.slice().sort((a, b) => displayOrder.indexOf(a.id) - displayOrder.indexOf(b.id));
-  const scheduled = scheduleForExport(ordered, scheduleViewDate);
+  // 「まとめてカレンダーに追加」と同じ考え方：一覧の表示順で、時刻未設定のものを自動的に埋める。
+  // 「複製」で増えた追加の時刻（task.extraTimes）も、それぞれ独立したブロックとして展開する
+  const scheduled = getScheduledOccurrences(scheduleViewDate);
 
-  const { h: wsh, m: wsm } = parseHM(state.settings.workStart, 9, 0);
-  const { h: weh, m: wem } = parseHM(state.settings.workEnd, 18, 0);
-  let rangeStart = wsh * 60 + wsm;
-  let rangeEnd = weh * 60 + wem;
-  for (const { start, end } of scheduled) {
-    rangeStart = Math.min(rangeStart, start.getHours() * 60 + start.getMinutes());
-    rangeEnd = Math.max(rangeEnd, end.getHours() * 60 + end.getMinutes());
-  }
-  rangeStart = Math.max(0, rangeStart - 30);
-  rangeEnd = Math.min(24 * 60, rangeEnd + 30);
-  if (rangeEnd <= rangeStart) { rangeStart = 8 * 60; rangeEnd = 20 * 60; }
+  // スケジュールは常に0:00〜24:00の固定表示にする
+  const rangeStart = 0;
+  const rangeEnd = 24 * 60;
 
   const totalHeight = (rangeEnd - rangeStart) / 60 * SCHEDULE_PX_PER_HOUR;
   hoursEl.style.height = totalHeight + "px";
@@ -1788,6 +1913,9 @@ function renderScheduleChart() {
     const label = document.createElement("div");
     label.className = "hour-label" + (isHour ? " hour-major" : " hour-minor");
     label.style.top = top + "px";
+    // 0:00のラベルは、他と同じ「線の上下中央」に揃えると上半分が枠からはみ出して見切れるため、
+    // これだけ線の真下（上端）に揃える
+    if (m === rangeStart) label.style.transform = "translateY(0)";
     label.textContent = isHour ? `${hh}:00` : `:${String(mm).padStart(2, "0")}`;
     hoursEl.appendChild(label);
 
@@ -1810,30 +1938,49 @@ function renderScheduleChart() {
     trackEl.appendChild(nowLine);
   }
 
-  const { laneMap, laneCount } = assignScheduleLanes(scheduled);
-  for (const { task, start, end } of scheduled) {
+  const { laneMap, laneCountMap } = assignScheduleLanes(scheduled);
+  for (const { task, start, end, occKey } of scheduled) {
     const startMin = start.getHours() * 60 + start.getMinutes();
-    const endMin = Math.max(startMin + 15, end.getHours() * 60 + end.getMinutes());
+    // 終了が日をまたぐ（＝0:00ちょうど、または翌日以降）場合は、当日の終わり（24:00）扱いにする。
+    // そうしないと end.getHours() が 0 に戻ってしまい、実際の長さより極端に短いブロックになってしまう
+    const endMin = isSameDay(start, end)
+      ? Math.max(startMin + 15, end.getHours() * 60 + end.getMinutes())
+      : 24 * 60;
     const top = (startMin - rangeStart) / 60 * SCHEDULE_PX_PER_HOUR;
     const height = Math.max(20, (endMin - startMin) / 60 * SCHEDULE_PX_PER_HOUR - 2);
-    const lane = laneMap[task.id] || 0;
-    const widthPct = 100 / laneCount;
+    const lane = laneMap[occKey] || 0;
+    const widthPct = 100 / (laneCountMap[occKey] || 1);
     const leftPct = lane * widthPct;
 
     const block = document.createElement("div");
     block.className = `schedule-block imp-${importanceBucket(task.importance)}${task.status === "done" ? " sb-done" : ""}`;
     block.dataset.taskId = task.id;
+    block.dataset.occKey = occKey;
     block.style.top = top + "px";
     block.style.height = height + "px";
     block.style.left = `calc(${leftPct}% + 3px)`;
     block.style.width = `calc(${widthPct}% - 6px)`;
-    const recurBadge = (task.recurring && task.recurring !== "none")
-      ? `<span class="chip chip-recurring">${recurringLabel[task.recurring]}</span>` : "";
-    block.title = `${task.title}\n${fmtHM(start)}〜${fmtHM(end)}`;
-    block.innerHTML = `<div class="sb-row"><span class="sb-title">${escapeHtml(task.title)}</span>${recurBadge}<span class="sb-time">${fmtHM(start)}〜${fmtHM(end)}</span></div>`;
+    const isExtra = !occKey.endsWith("#p"); // 「複製」で増えた追加の時刻かどうか
+    block.title = `${isExtra ? "🔁 " : ""}${task.title}\n${fmtHM(start)}〜${fmtHM(end)}${isExtra ? "\n（複製された時刻。右クリックで外せます）" : ""}`;
+    block.innerHTML = `
+      <div class="sb-resize-handle sb-resize-top" title="上端をドラッグして開始時刻を変更"></div>
+      <div class="sb-row"><span class="sb-title">${isExtra ? "🔁 " : ""}${escapeHtml(task.title)}</span><span class="sb-time">${fmtHM(start)}〜${fmtHM(end)}</span></div>
+      <div class="sb-resize-handle sb-resize-bottom" title="下端をドラッグして長さを変更"></div>
+    `;
     // ※タイトルが長い場合は行末（時刻側）から自然に省略される（.sb-row の text-overflow: ellipsis）
     trackEl.appendChild(block);
   }
+
+  // 表示している日を切り替えたときだけ、0:00（一番上）にスクロール位置を戻す
+  // （毎分の再描画やドラッグ後の再描画では呼ばない＝スクロール位置が勝手に飛ばないようにする）
+  if (dateChanged) scrollScheduleToTop();
+}
+
+// 初期表示・日付切り替え時は、現在時刻ではなく常に0:00（一番上）から見せる
+function scrollScheduleToTop() {
+  const outer = document.querySelector(".schedule-outer");
+  if (!outer) return;
+  outer.scrollTop = 0;
 }
 
 // ブロックをドラッグして時刻を変更する（Googleカレンダーのように、掴んで上下に動かして離す）
@@ -1844,9 +1991,15 @@ document.getElementById("scheduleTrack").addEventListener("pointerdown", (e) => 
   if (e.pointerType === "mouse" && e.button !== 0) return; // 右クリック（削除用）・中クリックはドラッグ開始しない
   e.preventDefault();
   const trackEl = document.getElementById("scheduleTrack");
+  // 上端・下端の取っ手をつかんだ場合は「長さの変更」、それ以外（ブロック本体）は今まで通り「時刻の移動」
+  let mode = "move";
+  if (e.target.closest(".sb-resize-top")) mode = "resize-top";
+  else if (e.target.closest(".sb-resize-bottom")) mode = "resize-bottom";
   scheduleDrag = {
     taskId: block.dataset.taskId,
+    occKey: block.dataset.occKey,
     blockEl: block,
+    mode,
     pointerStartY: e.clientY,
     startTopPx: parseFloat(block.style.top) || 0,
     heightPx: parseFloat(block.style.height) || 0,
@@ -1861,46 +2014,165 @@ document.addEventListener("pointermove", (e) => {
   if (!scheduleDrag.moved) {
     if (Math.abs(deltaY) < SCHEDULE_DRAG_THRESHOLD_PX) return;
     scheduleDrag.moved = true;
-    scheduleDrag.blockEl.classList.add("sb-dragging");
+    scheduleDrag.blockEl.classList.add(scheduleDrag.mode === "move" ? "sb-dragging" : "sb-resizing");
   }
   const pxPer15 = SCHEDULE_PX_PER_HOUR / 4;
-  let newTop = scheduleDrag.startTopPx + deltaY;
-  newTop = Math.max(0, Math.min(newTop, scheduleDrag.totalHeightPx - scheduleDrag.heightPx));
-  newTop = Math.round(newTop / pxPer15) * pxPer15; // 15分刻みにスナップ
-  scheduleDrag.blockEl.style.top = newTop + "px";
+  const minHeightPx = pxPer15; // 最短15分ぶんの高さは必ず残す
+
+  if (scheduleDrag.mode === "resize-bottom") {
+    // 上端（開始時刻）は固定したまま、下端を動かして長さだけを変える
+    let newHeight = scheduleDrag.heightPx + deltaY;
+    newHeight = Math.max(minHeightPx, Math.min(newHeight, scheduleDrag.totalHeightPx - scheduleDrag.startTopPx));
+    newHeight = Math.round(newHeight / pxPer15) * pxPer15;
+    scheduleDrag.blockEl.style.height = newHeight + "px";
+  } else if (scheduleDrag.mode === "resize-top") {
+    // 下端（終了時刻）は固定したまま、上端を動かして開始時刻と長さを一緒に変える
+    const bottomPx = scheduleDrag.startTopPx + scheduleDrag.heightPx;
+    let newTop = scheduleDrag.startTopPx + deltaY;
+    newTop = Math.max(0, Math.min(newTop, bottomPx - minHeightPx));
+    newTop = Math.round(newTop / pxPer15) * pxPer15;
+    scheduleDrag.blockEl.style.top = newTop + "px";
+    scheduleDrag.blockEl.style.height = (bottomPx - newTop) + "px";
+  } else {
+    let newTop = scheduleDrag.startTopPx + deltaY;
+    newTop = Math.max(0, Math.min(newTop, scheduleDrag.totalHeightPx - scheduleDrag.heightPx));
+    newTop = Math.round(newTop / pxPer15) * pxPer15; // 15分刻みにスナップ
+    scheduleDrag.blockEl.style.top = newTop + "px";
+  }
 });
 document.addEventListener("pointerup", () => {
   if (!scheduleDrag) return;
-  const { taskId, blockEl, moved, rangeStart } = scheduleDrag;
-  blockEl.classList.remove("sb-dragging");
+  const { taskId, occKey, blockEl, moved, mode, rangeStart } = scheduleDrag;
+  blockEl.classList.remove("sb-dragging", "sb-resizing");
   if (!moved) { scheduleDrag = null; return; } // 動かしていなければ何も変更しない（誤操作防止）
 
   const topPx = parseFloat(blockEl.style.top);
+  const heightPx = parseFloat(blockEl.style.height);
   const minutesFromRangeStart = (topPx / SCHEDULE_PX_PER_HOUR) * 60;
   let newStartMin = Math.round((rangeStart + minutesFromRangeStart) / 15) * 15;
   newStartMin = Math.max(0, Math.min(newStartMin, 24 * 60 - 15));
   const hh = Math.floor(newStartMin / 60), mm = newStartMin % 60;
+  const newTime = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 
   const task = state.tasks.find(t => t.id === taskId);
   scheduleDrag = null;
   if (!task) return;
-  task.time = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
-  if (!task.recurring || task.recurring === "none") {
-    // 繰り返しタスクでなければ、ドラッグ先の日付をそのタスクの開始日として確定する
-    const pad = n => String(n).padStart(2, "0");
-    task.start = `${scheduleViewDate.getFullYear()}-${pad(scheduleViewDate.getMonth() + 1)}-${pad(scheduleViewDate.getDate())}`;
+
+  const extraIdx = occKey && occKey.startsWith(`${task.id}#e`) ? Number(occKey.slice(`${task.id}#e`.length)) : -1;
+  // 「複製」で増えた追加の時刻（extraIdx>=0）は、本来の開始日でしか表示されない（getScheduledOccurrences側で絞っている）ので対象外。
+  // 本体（プライマリ）のブロックだけ、タスク一覧のチェックにより本来の開始日とは別の日に一時的に表示されている場合がある
+  const displayedDateStr = viewDateKey(scheduleViewDate);
+  const isForeignPreview = extraIdx < 0 && !!task.start && task.start !== displayedDateStr;
+  if (isForeignPreview) {
+    // ここで時刻・長さ・開始日を書き換えると、本来の日の予定まで知らないうちに変わってしまうため、何もしない
+    alert("チェックで一時的に表示しているだけの予定は、この日では時刻や長さを変更できません。変更したい場合は、本来の開始日を表示してから操作してください。");
+    renderScheduleChart(); // ドラッグで動いて見えている位置を、実際のデータに合わせて元に戻す
+    return;
+  }
+
+  if (mode === "resize-top" || mode === "resize-bottom") {
+    // 長さ（見積もり時間）を、ブロックの高さから求める。見積もりの選択肢と同じ0.25h〜8hの範囲に収める。
+    // ※見積もり時間はタスク本体が持つ値なので、複製した時刻がある場合はそちらの長さも一緒に変わります
+    let durationMin = Math.round((heightPx / SCHEDULE_PX_PER_HOUR) * 60 / 15) * 15;
+    durationMin = Math.max(15, Math.min(durationMin, 8 * 60));
+    task.estimate = durationMin / 60;
+  }
+
+  if (mode !== "resize-bottom") {
+    if (extraIdx >= 0 && Array.isArray(task.extraTimes) && task.extraTimes[extraIdx] !== undefined) {
+      // 「複製」で増えた追加の時刻を動かした場合は、その時刻だけを変更する（開始日・本来の時刻には触れない）
+      task.extraTimes[extraIdx] = newTime;
+    } else {
+      task.time = newTime;
+      // ドラッグ先の日付を、そのタスクの開始日として確定する
+      task.start = displayedDateStr;
+    }
   }
   saveData();
   renderAll();
 });
 document.addEventListener("pointercancel", () => {
   if (!scheduleDrag) return;
-  scheduleDrag.blockEl.classList.remove("sb-dragging");
+  scheduleDrag.blockEl.classList.remove("sb-dragging", "sb-resizing");
   scheduleDrag = null;
   renderScheduleChart(); // 見た目上動かした位置を元に戻す
 });
 
-// スケジュール上のブロックを右クリック（長押し）すると、確認のうえ削除する
+// 指定した長さ(durationMs)が収まる空き時間を、その日の0:00から15分刻みで探す。
+// occupiedRangesと重ならない最初の枠を返す。空きが無ければ、一番遅い予定の直後（24:00には収まらなくてもよい）にする。
+function findFreeSlot(occupiedRanges, durationMs, refDate) {
+  const stepMs = 15 * 60 * 1000;
+  const dayStart = new Date(refDate); dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+  let cursor = new Date(dayStart);
+  while (cursor.getTime() + durationMs <= dayEnd.getTime()) {
+    const candidateEnd = new Date(cursor.getTime() + durationMs);
+    const hit = occupiedRanges.find(r => cursor < r.end && candidateEnd > r.start);
+    if (!hit) return cursor;
+    // 重なった予定の終了時刻まで進め、15分刻みに切り上げる
+    const advanced = new Date(Math.max(cursor.getTime() + stepMs, hit.end.getTime()));
+    const minsFromDayStart = Math.ceil((advanced - dayStart) / stepMs) * 15;
+    cursor = new Date(dayStart.getTime() + minsFromDayStart * 60 * 1000);
+  }
+  // 1日の中に空きが見つからなければ、一番遅い予定の直後（15分刻みに切り上げ）に置く
+  const lastEnd = occupiedRanges.reduce((max, r) => (r.end > max ? r.end : max), dayStart);
+  const minsFromDayStart = Math.min(Math.ceil((lastEnd - dayStart) / stepMs) * 15, 24 * 60 - 15);
+  return new Date(dayStart.getTime() + minsFromDayStart * 60 * 1000);
+}
+
+// タスクを「複製」する。タスク一覧には増やさず、そのタスクの追加の時刻（task.extraTimes）に
+// 1件足すことで、スケジュール上にだけもう1つブロックを出す。時刻はその日の空いている時間を自動で選ぶ。
+function duplicateOccurrenceWithUndo(task) {
+  const refDate = scheduleViewDate;
+  if (task.start && task.start !== viewDateKey(refDate)) {
+    // タスク一覧のチェックにより、本来の開始日とは別の日に一時的に表示されているだけの予定。
+    // extraTimesは日付を持たないため、ここで複製すると本来の開始日にも同じ複製が漏れて出てしまう
+    alert("チェックで一時的に表示しているだけの予定は、この日では複製できません。複製したい場合は、本来の開始日を表示してから操作してください。");
+    return;
+  }
+  const durationMs = (Number(task.estimate) || 1) * 60 * 60 * 1000;
+  const occupied = getScheduledOccurrences(refDate).map(item => ({ start: item.start, end: item.end }));
+  const slotStart = findFreeSlot(occupied, durationMs, refDate);
+  const timeStr = fmtHM(slotStart);
+
+  if (!Array.isArray(task.extraTimes)) task.extraTimes = [];
+  task.extraTimes.push(timeStr);
+  const insertedIdx = task.extraTimes.length - 1;
+  saveData();
+  renderAll();
+  showUndoToast(`「${task.title}」を複製しました（${timeStr}〜）`, () => {
+    task.extraTimes.splice(insertedIdx, 1);
+    saveData();
+    renderAll();
+  });
+}
+
+// 「複製」で増えた追加の時刻を1件だけ外す（タスク本体・他の時刻には影響しない）
+function removeExtraOccurrenceWithUndo(task, idx) {
+  if (!Array.isArray(task.extraTimes) || task.extraTimes[idx] === undefined) return;
+  const removedTime = task.extraTimes[idx];
+  task.extraTimes.splice(idx, 1);
+  saveData();
+  renderAll();
+  showUndoToast(`「${task.title}」の複製（${removedTime}〜）を外しました`, () => {
+    if (!Array.isArray(task.extraTimes)) task.extraTimes = [];
+    task.extraTimes.splice(idx, 0, removedTime);
+    saveData();
+    renderAll();
+  });
+}
+
+// スケジュール上のブロックを右クリックすると、「複製」「スケジュールから外す」を選べる小さなメニューを出す
+let scheduleContextMenuTask = null;
+let scheduleContextMenuOccKey = null;
+const scheduleContextMenuEl = document.getElementById("scheduleContextMenu");
+
+function hideScheduleContextMenu() {
+  scheduleContextMenuEl.style.display = "none";
+  scheduleContextMenuTask = null;
+  scheduleContextMenuOccKey = null;
+}
+
 document.getElementById("scheduleTrack").addEventListener("contextmenu", (e) => {
   const block = e.target.closest(".schedule-block");
   if (!block) return;
@@ -1908,8 +2180,46 @@ document.getElementById("scheduleTrack").addEventListener("contextmenu", (e) => 
   if (scheduleDrag) { scheduleDrag = null; } // 右クリック中にドラッグ状態が残っていれば解除
   const task = state.tasks.find(t => t.id === block.dataset.taskId);
   if (!task) return;
-  unscheduleTaskWithUndo(task); // タスク一覧からは消さず、スケジュールの表示からだけ外す
+  scheduleContextMenuTask = task;
+  scheduleContextMenuOccKey = block.dataset.occKey;
+  scheduleContextMenuEl.style.display = "flex";
+  // 画面外にはみ出さないよう、右クリックした位置を基準に表示位置を調整する
+  const rect = scheduleContextMenuEl.getBoundingClientRect();
+  const left = Math.min(e.clientX, window.innerWidth - rect.width - 8);
+  const top = Math.min(e.clientY, window.innerHeight - rect.height - 8);
+  scheduleContextMenuEl.style.left = Math.max(8, left) + "px";
+  scheduleContextMenuEl.style.top = Math.max(8, top) + "px";
 });
+
+scheduleContextMenuEl.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  const task = scheduleContextMenuTask;
+  const occKey = scheduleContextMenuOccKey;
+  hideScheduleContextMenu();
+  if (!btn || !task) return;
+  if (btn.dataset.menuAction === "duplicate") {
+    duplicateOccurrenceWithUndo(task);
+  } else if (btn.dataset.menuAction === "unschedule") {
+    const prefix = `${task.id}#e`;
+    if (occKey && occKey.startsWith(prefix)) {
+      removeExtraOccurrenceWithUndo(task, Number(occKey.slice(prefix.length)));
+    } else if (task.scheduleOnly) {
+      // ペーストで追加された（タスク一覧に出ない）タスクは、外すと行き場が無くなるので削除する
+      deleteTaskWithUndo(task);
+    } else {
+      unscheduleTaskWithUndo(task); // タスク一覧からは消さず、スケジュールの表示からだけ外す
+    }
+  }
+});
+
+// メニューの外をクリック／Escapeで閉じる
+document.addEventListener("click", (e) => {
+  if (scheduleContextMenuEl.style.display !== "none" && !scheduleContextMenuEl.contains(e.target)) hideScheduleContextMenu();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") hideScheduleContextMenu();
+});
+document.querySelector(".schedule-outer").addEventListener("scroll", hideScheduleContextMenu);
 
 /* ============ ガントチャート（横・複数日） ============ */
 
@@ -1939,7 +2249,6 @@ function buildGanttItems(days) {
   const windowEnd = days[days.length - 1];
   const items = [];
   for (const t of state.tasks) {
-    if (t.recurring && t.recurring !== "none") continue; // 繰り返しタスクは「今日のスケジュール」にのみ表示し、ガントチャートには出さない
     let sd = ganttParseDateStr(t.start || "");
     let ed = ganttParseDateStr(t.deadline || "");
     if (!sd || !ed) continue; // 開始日・終了日の両方が入力されているタスクだけを対象にする
@@ -1971,7 +2280,15 @@ function renderGanttChart() {
   const outer = document.querySelector(".gantt2-outer");
   emptyEl.style.display = items.length ? "none" : "block";
   outer.style.display = items.length ? "flex" : "none";
-  if (!items.length) return;
+  if (!items.length) {
+    // 開始日・終了日は設定済みでも、表示期間（今日の2日前〜60日後）の外にあると出てこない。
+    // 単に「未設定」と誤解されないよう、原因に応じてメッセージを出し分ける
+    const hasOutOfRangeTask = state.tasks.some(t => ganttParseDateStr(t.start || "") && ganttParseDateStr(t.deadline || ""));
+    emptyEl.textContent = hasOutOfRangeTask
+      ? "開始日・終了日は設定されていますが、表示期間（今日の2日前〜60日後）の外にあるため表示できません。"
+      : "期間内に表示できるタスクはありません（開始日と終了日の両方を設定してください）。";
+    return;
+  }
 
   const dayCount = days.length;
   const todayIdx = GANTT2_PAST_DAYS; // buildGanttDaysの並びから、今日は必ずこのインデックス
@@ -2060,34 +2377,47 @@ function renderGanttChart() {
   });
 }
 
-// カテゴリのマスタ管理カード（一覧・改名・削除）と、追加フォームの選択肢を描画する
+// カテゴリのマスタ管理カード（一覧・改名・削除・仕事/プライベート切り替え）と、追加フォームの選択肢を描画する
 function renderCategoryMaster() {
   const rowsEl = document.getElementById("categoryRows");
   rowsEl.innerHTML = state.categories.length === 0
     ? `<div class="empty" style="padding:16px 0;">カテゴリがまだ登録されていません。下から追加してください。</div>`
     : state.categories.map(c => `
-        <div class="category-row" data-name="${escapeHtml(c)}" style="display:flex; gap:8px; align-items:center;">
+        <div class="category-row" data-name="${escapeHtml(c.name)}" style="display:flex; gap:8px; align-items:center;">
           <span class="drag-handle category-drag-handle" title="ドラッグで並び替え">⠿</span>
-          <input type="text" class="category-rename-input" data-old="${escapeHtml(c)}" value="${escapeHtml(c)}"
+          <input type="text" class="category-rename-input" data-old="${escapeHtml(c.name)}" value="${escapeHtml(c.name)}"
             style="flex:1; min-width:120px; padding:8px 10px; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text); font-size:0.88rem;">
-          <button class="btn btn-danger category-delete-btn" data-name="${escapeHtml(c)}" style="flex-shrink:0;">削除</button>
+          <div class="category-type-toggle" data-name="${escapeHtml(c.name)}">
+            <button type="button" class="category-type-btn ${(c.type || "work") === "work" ? "active" : ""}" data-type="work">仕事</button>
+            <button type="button" class="category-type-btn ${c.type === "private" ? "active" : ""}" data-type="private">プライベート</button>
+          </div>
+          <button class="btn btn-danger category-delete-btn" data-name="${escapeHtml(c.name)}" style="flex-shrink:0;">削除</button>
         </div>
       `).join("");
 
   const formSelect = document.getElementById("f-category");
   const prevValue = formSelect.value;
-  formSelect.innerHTML = categoryOptions(state.categories.includes(prevValue) ? prevValue : "");
+  formSelect.innerHTML = categoryOptions(state.categories.some(c => c.name === prevValue) ? prevValue : "");
 }
 
 // カテゴリ名を変更する。マスタ一覧の名前だけでなく、それを使っている全タスクにも反映する
 function renameCategory(oldName, newName) {
   newName = newName.trim();
   if (!newName || newName === oldName) return;
-  if (state.categories.includes(newName)) { alert(`「${newName}」は既に登録されています。`); renderCategoryMaster(); return; }
-  const idx = state.categories.indexOf(oldName);
-  if (idx === -1) return;
-  state.categories[idx] = newName;
+  if (state.categories.some(c => c.name === newName)) { alert(`「${newName}」は既に登録されています。`); renderCategoryMaster(); return; }
+  const cat = state.categories.find(c => c.name === oldName);
+  if (!cat) return;
+  cat.name = newName;
   state.tasks.forEach(t => { if (t.category === oldName) t.category = newName; });
+  saveData();
+  renderAll();
+}
+
+// カテゴリの「仕事／プライベート」区分を切り替える
+function setCategoryType(name, type) {
+  const cat = state.categories.find(c => c.name === name);
+  if (!cat || cat.type === type) return;
+  cat.type = type;
   saveData();
   renderAll();
 }
@@ -2095,7 +2425,7 @@ function renameCategory(oldName, newName) {
 // カテゴリを削除する。使っているタスクは「カテゴリなし」に戻す
 function deleteCategory(name) {
   if (!confirm(`「${name}」を削除しますか？\nこのカテゴリを使っているタスクは「カテゴリなし」になります。`)) return;
-  state.categories = state.categories.filter(c => c !== name);
+  state.categories = state.categories.filter(c => c.name !== name);
   state.tasks.forEach(t => { if (t.category === name) t.category = ""; });
   saveData();
   renderAll();
@@ -2107,8 +2437,13 @@ document.getElementById("categoryRows").addEventListener("change", (e) => {
   }
 });
 document.getElementById("categoryRows").addEventListener("click", (e) => {
-  const btn = e.target.closest(".category-delete-btn");
-  if (btn) deleteCategory(btn.dataset.name);
+  const delBtn = e.target.closest(".category-delete-btn");
+  if (delBtn) { deleteCategory(delBtn.dataset.name); return; }
+  const typeBtn = e.target.closest(".category-type-btn");
+  if (typeBtn) {
+    const toggle = typeBtn.closest(".category-type-toggle");
+    setCategoryType(toggle.dataset.name, typeBtn.dataset.type);
+  }
 });
 
 // カテゴリの並び替え（タスク一覧のドラッグと同じ、Pointer Eventsによる自前実装）
@@ -2134,8 +2469,8 @@ document.addEventListener("pointerup", (e) => {
   const targetName = overRow ? overRow.dataset.name : null;
   document.querySelectorAll("#categoryRows .dragging, #categoryRows .drag-over").forEach(el => el.classList.remove("dragging", "drag-over"));
   if (targetName && targetName !== draggedCategory) {
-    const fromIdx = state.categories.indexOf(draggedCategory);
-    const toIdx = state.categories.indexOf(targetName);
+    const fromIdx = state.categories.findIndex(c => c.name === draggedCategory);
+    const toIdx = state.categories.findIndex(c => c.name === targetName);
     if (fromIdx !== -1 && toIdx !== -1) {
       const [moved] = state.categories.splice(fromIdx, 1);
       state.categories.splice(toIdx, 0, moved);
@@ -2153,151 +2488,14 @@ document.getElementById("addCategoryBtn").addEventListener("click", () => {
   const input = document.getElementById("newCategoryInput");
   const name = input.value.trim();
   if (!name) return;
-  if (state.categories.includes(name)) { alert(`「${name}」は既に登録されています。`); return; }
-  state.categories.push(name); // 末尾に追加（並び順はドラッグで自由に変更できる）
+  if (state.categories.some(c => c.name === name)) { alert(`「${name}」は既に登録されています。`); return; }
+  state.categories.push({ name, type: "work" }); // 末尾に追加（並び順はドラッグで自由に変更できる。既定は「仕事」）
   saveData();
   input.value = "";
   renderAll();
 });
 
-/* ============ テンプレート（決まった1日分の予定をまとめて登録） ============ */
-
-// テンプレート一覧・各テンプレートの項目リスト・スケジュールカードの「適用」セレクトを描画する
-function renderTemplates() {
-  const listEl = document.getElementById("templateList");
-  listEl.innerHTML = state.templates.length === 0
-    ? `<div class="empty" style="padding:16px 0;">テンプレートがまだありません。下から追加してください。</div>`
-    : state.templates.map(tpl => `
-        <div class="template-card" data-id="${tpl.id}">
-          <div class="template-card-header">
-            <input type="text" class="template-rename-input text-input" data-id="${tpl.id}" value="${escapeHtml(tpl.name)}">
-            <button class="btn btn-danger template-delete-btn" data-id="${tpl.id}">テンプレートを削除</button>
-          </div>
-          <div class="template-items">
-            ${tpl.items.length === 0
-              ? `<div class="template-empty-items">項目がまだありません。下のフォームから追加してください。</div>`
-              : tpl.items.map(item => `
-                  <div class="template-item-row">
-                    <span class="template-item-time-badge">${item.time || "--:--"}</span>
-                    <span class="template-item-title-text">${escapeHtml(item.title)}</span>
-                    <span class="template-item-meta">${item.estimate}h・優先度${item.importance}・負荷${item.load}%${item.category ? "・" + escapeHtml(item.category) : ""}</span>
-                    <button class="btn btn-danger template-item-delete-btn" data-template-id="${tpl.id}" data-item-id="${item.id}">削除</button>
-                  </div>
-                `).join("")}
-          </div>
-          <div class="template-add-item-row">
-            <input type="text" class="template-item-title" data-template-id="${tpl.id}" placeholder="項目名">
-            <input type="time" class="template-item-time" data-template-id="${tpl.id}" step="900">
-            <select class="template-item-estimate" data-template-id="${tpl.id}">${estimateOptions(1)}</select>
-            <select class="template-item-importance" data-template-id="${tpl.id}">${importanceOptions(3)}</select>
-            <select class="template-item-load" data-template-id="${tpl.id}">${pctOptions(50)}</select>
-            <select class="template-item-category" data-template-id="${tpl.id}">${categoryOptions("")}</select>
-            <button class="btn btn-secondary template-add-item-btn" data-template-id="${tpl.id}">項目を追加</button>
-          </div>
-        </div>
-      `).join("");
-
-  // スケジュールカードの「適用」セレクトにも反映
-  const applySelect = document.getElementById("templateApplySelect");
-  const prevValue = applySelect.value;
-  applySelect.innerHTML = state.templates.length === 0
-    ? `<option value="">（テンプレート未登録）</option>`
-    : state.templates.map(tpl => `<option value="${tpl.id}" ${tpl.id === prevValue ? "selected" : ""}>${escapeHtml(tpl.name)}（${tpl.items.length}件）</option>`).join("");
-}
-
-// テンプレートの項目を、指定日のタスクとして一括登録する（元に戻すトースト対応）
-function applyTemplate(templateId, dateStr) {
-  const tpl = state.templates.find(t => t.id === templateId);
-  if (!tpl) return;
-  if (!tpl.items.length) { alert(`「${tpl.name}」には項目がありません。テンプレートタブから項目を追加してください。`); return; }
-  const newTasks = tpl.items.map(item => ({
-    id: uid(), title: item.title, importance: item.importance, load: item.load,
-    estimate: item.estimate, status: "not_started", start: dateStr, time: item.time || "",
-    deadline: "", category: item.category || "", recurring: "none"
-  }));
-  state.tasks.push(...newTasks);
-  saveData();
-  renderAll();
-  showUndoToast(`「${tpl.name}」を${fmtDate(dateStr)}に適用しました（${newTasks.length}件追加）`, () => {
-    const ids = new Set(newTasks.map(t => t.id));
-    state.tasks = state.tasks.filter(t => !ids.has(t.id));
-    saveData();
-    renderAll();
-  });
-}
-
-document.getElementById("addTemplateBtn").addEventListener("click", () => {
-  const input = document.getElementById("newTemplateInput");
-  const name = input.value.trim();
-  if (!name) return;
-  if (state.templates.some(t => t.name === name)) { alert(`「${name}」は既に登録されています。`); return; }
-  state.templates.push({ id: uid(), name, items: [] });
-  saveData();
-  input.value = "";
-  renderAll();
-});
-
-document.getElementById("templateList").addEventListener("change", (e) => {
-  if (e.target.matches(".template-rename-input")) {
-    const tpl = state.templates.find(t => t.id === e.target.dataset.id);
-    if (!tpl) return;
-    const newName = e.target.value.trim();
-    if (!newName) { e.target.value = tpl.name; return; }
-    tpl.name = newName;
-    saveData();
-    renderAll();
-  }
-});
-
-document.getElementById("templateList").addEventListener("click", (e) => {
-  const deleteTplBtn = e.target.closest(".template-delete-btn");
-  if (deleteTplBtn) {
-    const tpl = state.templates.find(t => t.id === deleteTplBtn.dataset.id);
-    if (tpl && confirm(`「${tpl.name}」を削除しますか？（中の項目もすべて削除されます）`)) {
-      state.templates = state.templates.filter(t => t.id !== tpl.id);
-      saveData();
-      renderAll();
-    }
-    return;
-  }
-  const deleteItemBtn = e.target.closest(".template-item-delete-btn");
-  if (deleteItemBtn) {
-    const tpl = state.templates.find(t => t.id === deleteItemBtn.dataset.templateId);
-    if (tpl) {
-      tpl.items = tpl.items.filter(item => item.id !== deleteItemBtn.dataset.itemId);
-      saveData();
-      renderAll();
-    }
-    return;
-  }
-  const addItemBtn = e.target.closest(".template-add-item-btn");
-  if (addItemBtn) {
-    const tpl = state.templates.find(t => t.id === addItemBtn.dataset.templateId);
-    if (!tpl) return;
-    const card = addItemBtn.closest(".template-card");
-    const titleInput = card.querySelector(".template-item-title");
-    const title = titleInput.value.trim();
-    if (!title) { alert("項目名を入力してください。"); return; }
-    const time = card.querySelector(".template-item-time").value;
-    const estimate = Number(card.querySelector(".template-item-estimate").value) || 1;
-    const importance = Number(card.querySelector(".template-item-importance").value) || 3;
-    const load = Number(card.querySelector(".template-item-load").value) || 0;
-    const category = card.querySelector(".template-item-category").value;
-    tpl.items.push({ id: uid(), title, time, estimate, importance, load, category });
-    saveData();
-    renderAll();
-  }
-});
-
-document.getElementById("applyTemplateBtn").addEventListener("click", () => {
-  const templateId = document.getElementById("templateApplySelect").value;
-  if (!templateId) { alert("適用するテンプレートを選んでください。"); return; }
-  const pad = n => String(n).padStart(2, "0");
-  const dateStr = `${scheduleViewDate.getFullYear()}-${pad(scheduleViewDate.getMonth() + 1)}-${pad(scheduleViewDate.getDate())}`;
-  applyTemplate(templateId, dateStr);
-});
-
-const TAB_PANEL_IDS = { tasks: "tasksTabPanel", templates: "templatesTabPanel", categories: "categoriesTabPanel" };
+const TAB_PANEL_IDS = { tasks: "tasksTabPanel", categories: "categoriesTabPanel" };
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -2310,14 +2508,13 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 });
 
 function renderAll() {
-  renderCapacity();
   renderTasks();
   renderScheduleChart();
   renderGanttChart();
   renderCategoryMaster();
-  renderTemplates();
 }
 renderAll();
+syncSettingsForm();
 updateGcalUI(); // 保存済みトークンがあればボタン表示を「連携済み」状態にする
 // 現在時刻の線と、時刻未設定タスクの仮の位置を毎分更新（タスク一覧自体は再描画しないので入力中の編集は邪魔しない）
 setInterval(renderScheduleChart, 60000);
