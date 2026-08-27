@@ -209,6 +209,7 @@
     padding: 7px 11px; border-radius: var(--radius-control); border: 1px solid var(--border);
     background: var(--card); color: var(--text); font-size: 0.86rem;
   }
+  .filters .text-input { padding: 7px 11px; min-width: 160px; font-size: 0.86rem; }
   table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
   th, td { text-align: left; padding: 11px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; overflow: hidden; }
   th {
@@ -462,7 +463,7 @@
     .form-grid { grid-template-columns: 1fr; }
     .field.wide { grid-column: span 1; }
     .filters { gap: 8px; }
-    .filters select { flex: 1 1 auto; min-width: 0; }
+    .filters select, .filters .text-input { flex: 1 1 auto; min-width: 0; }
     #exportIcsBtn { width: 100%; }
     .gantt2-labels { width: 96px; }
     .gantt2-labels .gantt2-row-label { font-size: 0.72rem; padding: 0 6px; }
@@ -660,6 +661,8 @@
       <option value="category">並び順：カテゴリ</option>
       <option value="order" selected>並び順：カスタム（ドラッグで並び替え）</option>
     </select>
+    <select id="filterCategory"></select>
+    <input type="text" id="filterKeyword" class="text-input" placeholder="🔍 タイトルで検索">
     <span class="spacer"></span>
     <span class="filters-hint" id="selectedCount"></span>
     <button class="btn btn-cal" id="exportIcsBtn">選択した予定をまとめてカレンダーに追加（.ics）</button>
@@ -940,15 +943,30 @@ function isWorkCategory(categoryName) {
   const cat = state.categories.find(c => c.name === categoryName);
   return !!cat && (cat.type || "work") === "work"; // マスタに無いカテゴリ（削除済みなど）は対象外
 }
+// 📥ペーストで追加されたタスク（scheduleOnly）は、コピー元タスクのidをsourceTaskIdとして持っている場合、
+// 貼り付け時点のload値を凍結して持つのではなく、コピー元タスクが今も存在すればその最新のload値を使う
+// （一覧でコピー元のloadを直しても、貼り付けた側の負荷表示に反映されない、という不整合を防ぐため）。
+// コピー元が削除済みなら、貼り付け時に凍結されたtask.load（フォールバック）をそのまま使う。
+function resolveTaskLoad(task) {
+  // 貼り付けをコピーしてさらに貼り付けた場合など、sourceTaskIdが数珠つなぎになっているケースも
+  // 想定し、たどれる限りたどって一番元のタスクの最新load値を使う（循環参照になった場合の安全弁付き）。
+  let current = task;
+  for (let i = 0; i < 20 && current.scheduleOnly && current.sourceTaskId; i++) {
+    const source = state.tasks.find(t => t.id === current.sourceTaskId);
+    if (!source || source === current) break;
+    current = source;
+  }
+  return Number(current.load) || 0;
+}
 function renderWorkLoad() {
   const workLoadPctEl = document.getElementById("workLoadPct");
   if (!workLoadPctEl) return;
   const relevant = getTodayTasksForSchedule(scheduleViewDate);
-  let workLoad = relevant.filter(t => isWorkCategory(t.category)).reduce((sum, t) => sum + (Number(t.load) || 0), 0);
+  let workLoad = relevant.filter(t => isWorkCategory(t.category)).reduce((sum, t) => sum + resolveTaskLoad(t), 0);
   // 複製で増えた追加の時刻（task.extraTimes）も、実際に時間を使う分だけ負荷を追加でカウントする
   for (const t of relevant) {
     if (isWorkCategory(t.category) && Array.isArray(t.extraTimes) && t.extraTimes.length) {
-      workLoad += t.extraTimes.length * (Number(t.load) || 0);
+      workLoad += t.extraTimes.length * resolveTaskLoad(t);
     }
   }
   const cap = Number(state.settings.workLoadCap) || 0;
@@ -975,7 +993,7 @@ function taskStartEndAt(task, timeStr, fallbackDate = new Date()) {
 function taskDetails(task) {
   return [
     `優先度: ${Number(task.importance) || 0}/5`,
-    `負荷: ${Number(task.load) || 0}%`,
+    `負荷: ${resolveTaskLoad(task)}%`,
     task.category ? `カテゴリ: ${task.category}` : null,
     task.deadline ? `終了日: ${task.deadline}` : null
   ].filter(Boolean).join("\n");
@@ -1249,9 +1267,15 @@ function sortKey(t) {
 
 function renderTasks() {
   const sortBy = document.getElementById("sortBy").value;
+  const filterCategory = document.getElementById("filterCategory").value;
+  const filterKeyword = document.getElementById("filterKeyword").value.trim().toLowerCase();
   // 「ペースト」で追加されたタスク（scheduleOnly）はスケジュール表示専用で、
   // タスク一覧タブには出さない（編集・削除はスケジュール上の右クリックからのみ行う）
   let tasks = state.tasks.filter(t => !t.scheduleOnly);
+  const hasAnyTask = tasks.length > 0; // 絞り込み前の件数（「タスクが無い」と「絞り込みで0件」を区別するため）
+
+  if (filterCategory) tasks = tasks.filter(t => (t.category || "") === filterCategory);
+  if (filterKeyword) tasks = tasks.filter(t => (t.title || "").toLowerCase().includes(filterKeyword));
 
   const orderMode = sortBy === "order";
   tasks = tasks.slice().sort((a, b) => {
@@ -1264,7 +1288,16 @@ function renderTasks() {
 
   const body = document.getElementById("taskBody");
   body.innerHTML = "";
-  document.getElementById("emptyMsg").style.display = tasks.length ? "none" : "block";
+  const emptyMsg = document.getElementById("emptyMsg");
+  if (tasks.length) {
+    emptyMsg.style.display = "none";
+  } else {
+    // タスクが1件もない場合と、絞り込み条件に一致するタスクが無い場合とでメッセージを出し分ける
+    emptyMsg.textContent = hasAnyTask
+      ? "絞り込み条件に一致するタスクがありません。"
+      : "タスクがまだありません。上のフォームから追加してください。";
+    emptyMsg.style.display = "block";
+  }
 
   for (const t of tasks) {
     const tr = document.createElement("tr");
@@ -1357,6 +1390,15 @@ function categoryOptions(current) {
       html += `<option value="${escapeHtml(c.name)}" ${c.name === cur ? "selected" : ""}>${escapeHtml(c.name)}</option>`;
     }
     html += `</optgroup>`;
+  }
+  return html;
+}
+// カテゴリ絞り込み用セレクト：「すべて」＋ state.categories の各カテゴリ名から<option>群を作る
+function categoryFilterOptions(current) {
+  const cur = current || "";
+  let html = `<option value="" ${cur === "" ? "selected" : ""}>すべてのカテゴリ</option>`;
+  for (const c of state.categories) {
+    html += `<option value="${escapeHtml(c.name)}" ${c.name === cur ? "selected" : ""}>${escapeHtml(c.name)}</option>`;
   }
   return html;
 }
@@ -1513,6 +1555,8 @@ document.getElementById("settingsToggleBtn").addEventListener("click", () => {
 });
 
 document.getElementById("sortBy").addEventListener("change", renderTasks);
+document.getElementById("filterCategory").addEventListener("change", renderTasks);
+document.getElementById("filterKeyword").addEventListener("input", renderTasks);
 
 document.getElementById("scheduleDateInput").addEventListener("change", (e) => {
   const v = e.target.value; // "YYYY-MM-DD"
@@ -1565,6 +1609,7 @@ document.getElementById("scheduleCopyBtn").addEventListener("click", () => {
   const tasks = state.tasks.filter(t => t.start === dateStr);
   if (!tasks.length) { alert("表示中の日にはコピーする予定がありません。"); return; }
   const clip = tasks.map(t => ({
+    id: t.id, // ペースト時にコピー元として参照し、最新のload値を追従させるために保持する
     title: t.title, importance: t.importance, load: t.load, estimate: t.estimate,
     category: t.category, time: t.time,
     extraTimes: Array.isArray(t.extraTimes) ? t.extraTimes.slice() : [] // 「複製」で増えた分も含めてコピーする
@@ -1582,7 +1627,8 @@ document.getElementById("schedulePasteBtn").addEventListener("click", () => {
     id: uid(), title: c.title, importance: c.importance, load: c.load, estimate: c.estimate,
     status: "not_started", start: targetDate, time: c.time || "", deadline: "", category: c.category || "",
     extraTimes: Array.isArray(c.extraTimes) ? c.extraTimes.slice() : [],
-    scheduleOnly: true // タスク一覧タブには出さず、スケジュール表示にだけ乗せる
+    scheduleOnly: true, // タスク一覧タブには出さず、スケジュール表示にだけ乗せる
+    sourceTaskId: c.id || null // コピー元タスクが現存する限り、負荷（load）はコピー元の最新値を参照する（resolveTaskLoad参照）
   }));
   state.tasks.push(...added);
   saveData();
@@ -2398,6 +2444,11 @@ function renderCategoryMaster() {
   const formSelect = document.getElementById("f-category");
   const prevValue = formSelect.value;
   formSelect.innerHTML = categoryOptions(state.categories.some(c => c.name === prevValue) ? prevValue : "");
+
+  // タスク一覧の絞り込み用セレクトも、カテゴリの追加・改名・削除に追従させる
+  const filterSelect = document.getElementById("filterCategory");
+  const prevFilterValue = filterSelect.value;
+  filterSelect.innerHTML = categoryFilterOptions(state.categories.some(c => c.name === prevFilterValue) ? prevFilterValue : "");
 }
 
 // カテゴリ名を変更する。マスタ一覧の名前だけでなく、それを使っている全タスクにも反映する
@@ -2508,10 +2559,13 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 });
 
 function renderAll() {
+  // カテゴリ一覧（#filterCategory・#f-category）を先に最新化してからタスク一覧を描画しないと、
+  // カテゴリの改名・削除直後は絞り込みセレクトの値が古いカテゴリ名のままの一瞬でrenderTasks()が
+  // 実行され、絞り込み結果と表示中のセレクト値がずれてしまう
+  renderCategoryMaster();
   renderTasks();
   renderScheduleChart();
   renderGanttChart();
-  renderCategoryMaster();
 }
 renderAll();
 syncSettingsForm();
