@@ -10,21 +10,21 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
-    --bg: #f1ece1;
-    --card: #fffdf8;
-    --card-alt: #f6efe1;
-    --text: #29241c;
-    --text-sub: #766c5a;
-    --border: #e2d8c3;
-    --accent: #3a6a5b;
-    --accent-strong: #234840;
-    --accent-soft: #e1ece5;
-    --danger: #b8503f;
-    --danger-soft: #f4ddd4;
-    --warn: #b3831f;
-    --warn-soft: #f3e6c8;
-    --ok: #3a6a5b;
-    --chip-bg: #ece2cc;
+    --bg: #eef3fa;
+    --card: #ffffff;
+    --card-alt: #e8f0fb;
+    --text: #1b2733;
+    --text-sub: #5b6b80;
+    --border: #d7e3f0;
+    --accent: #2f5fce;
+    --accent-strong: #1f3f99;
+    --accent-soft: #e3ebfb;
+    --danger: #c23b30;
+    --danger-soft: #fbe3e0;
+    --warn: #9c6415;
+    --warn-soft: #f6e6cc;
+    --ok: #2f5fce;
+    --chip-bg: #e2eaf5;
     --shadow: 0 1px 2px rgba(41, 30, 12, 0.06), 0 8px 22px -6px rgba(41, 30, 12, 0.14);
     --shadow-sm: 0 1px 2px rgba(41, 30, 12, 0.08);
     --font-display: "Hiragino Mincho ProN", "Yu Mincho", "MS Mincho", serif;
@@ -47,41 +47,41 @@
      「ライト」「ダーク」を明示選択した時はdata-theme属性でそちらを優先する */
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #18160f;
-      --card: #221f17;
-      --card-alt: #29261c;
-      --text: #ece4d3;
-      --text-sub: #a89a7d;
-      --border: #3a3423;
-      --accent: #82b6a2;
-      --accent-strong: #aad4c1;
-      --accent-soft: #24352e;
-      --danger: #dc8b74;
-      --danger-soft: #3c2a22;
-      --warn: #dcb268;
-      --warn-soft: #392c17;
-      --ok: #82b6a2;
-      --chip-bg: #2f2a1d;
+      --bg: #10151f;
+      --card: #1a2230;
+      --card-alt: #212b3d;
+      --text: #e7edf7;
+      --text-sub: #8fa0b8;
+      --border: #2c3a52;
+      --accent: #5b8ef0;
+      --accent-strong: #a3c5fb;
+      --accent-soft: #1f2d47;
+      --danger: #f0897a;
+      --danger-soft: #3a2420;
+      --warn: #e3b463;
+      --warn-soft: #3a2e17;
+      --ok: #5b8ef0;
+      --chip-bg: #24304a;
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 26px -8px rgba(0, 0, 0, 0.45);
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #18160f;
-    --card: #221f17;
-    --card-alt: #29261c;
-    --text: #ece4d3;
-    --text-sub: #a89a7d;
-    --border: #3a3423;
-    --accent: #82b6a2;
-    --accent-strong: #aad4c1;
-    --accent-soft: #24352e;
-    --danger: #dc8b74;
-    --danger-soft: #3c2a22;
-    --warn: #dcb268;
-    --warn-soft: #392c17;
-    --ok: #82b6a2;
-    --chip-bg: #2f2a1d;
+    --bg: #10151f;
+    --card: #1a2230;
+    --card-alt: #212b3d;
+    --text: #e7edf7;
+    --text-sub: #8fa0b8;
+    --border: #2c3a52;
+    --accent: #5b8ef0;
+    --accent-strong: #a3c5fb;
+    --accent-soft: #1f2d47;
+    --danger: #f0897a;
+    --danger-soft: #3a2420;
+    --warn: #e3b463;
+    --warn-soft: #3a2e17;
+    --ok: #5b8ef0;
+    --chip-bg: #24304a;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 26px -8px rgba(0, 0, 0, 0.45);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
@@ -173,7 +173,7 @@
   }
   .btn:hover { filter: brightness(1.06); box-shadow: var(--shadow-sm); }
   .btn:active { transform: translateY(1px); }
-  .btn-primary { background: var(--accent); color: #fff8ec; box-shadow: 0 1px 0 rgba(255,255,255,.12) inset; }
+  .btn-primary { background: var(--accent); color: #f5f9ff; box-shadow: 0 1px 0 rgba(255,255,255,.12) inset; }
   .btn-secondary { background: var(--chip-bg); color: var(--text); }
   .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
   .btn-cal { background: var(--accent-soft); color: var(--accent-strong); border: 1px solid var(--accent); font-weight: 700; }
@@ -185,7 +185,7 @@
     box-shadow: var(--shadow); font-size: 0.86rem; z-index: 100;
     max-width: calc(100vw - 32px);
   }
-  .undo-toast #undoToastBtn { background: var(--accent); color: #fff8ec; padding: 7px 14px; font-size: 0.82rem; flex-shrink: 0; }
+  .undo-toast #undoToastBtn { background: var(--accent); color: #f5f9ff; padding: 7px 14px; font-size: 0.82rem; flex-shrink: 0; }
   .context-menu {
     position: fixed; z-index: 200; background: var(--card); border: 1px solid var(--border);
     border-radius: var(--radius-block); box-shadow: var(--shadow); padding: 4px; min-width: 190px;
@@ -270,7 +270,7 @@
     transition: background-color .15s ease, color .15s ease, border-color .15s ease;
   }
   .category-type-btn:hover { color: var(--text); }
-  .category-type-btn.active { background: var(--accent); color: #fff8ec; border-color: var(--accent); }
+  .category-type-btn.active { background: var(--accent); color: #f5f9ff; border-color: var(--accent); }
   #categoryRows { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); }
   .category-add-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
   /* .field inputと共通の見た目のテキスト入力（フォーム外＝カテゴリ管理タブなどで使う） */
