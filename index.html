@@ -316,6 +316,19 @@
   .start-cell-row { display: flex; gap: 4px; }
   .start-cell-row input[type="date"] { flex: 1.3; min-width: 0; }
   .start-cell-row input[type="time"] { flex: 1; min-width: 0; }
+  /* タイトルセル先頭の「詳細行」開閉トグル（優先度・負荷・見積もり） */
+  .title-cell-row { display: flex; align-items: center; gap: 4px; }
+  .title-cell-row input.inline-edit { flex: 1; min-width: 0; }
+  .detail-toggle {
+    flex-shrink: 0; width: 16px; padding: 0; border: none; background: none; cursor: pointer;
+    color: var(--text-sub); font-size: 0.68rem; line-height: 1; font-family: inherit; text-align: center;
+  }
+  .detail-toggle:hover { color: var(--accent-strong); }
+  .detail-row td { background: var(--card-alt); }
+  .detail-row-inner { display: flex; gap: var(--space-4); flex-wrap: wrap; padding: 2px 0; }
+  .detail-row-inner .field { min-width: 96px; flex: 1 1 96px; }
+  /* フォーム「詳細設定」の開閉トグル */
+  .form-detail-toggle-row { margin: 0 0 var(--space-4); }
 
   /* ===== 今日のスケジュール（縦・1日タイムライン） ===== */
   .schedule-card { margin-bottom: var(--space-6); }
@@ -464,7 +477,6 @@
     .field.wide { grid-column: span 1; }
     .filters { gap: 8px; }
     .filters select, .filters .text-input { flex: 1 1 auto; min-width: 0; }
-    #exportIcsBtn { width: 100%; }
     .gantt2-labels { width: 96px; }
     .gantt2-labels .gantt2-row-label { font-size: 0.72rem; padding: 0 6px; }
     .schedule-hours { width: 36px; }
@@ -584,6 +596,23 @@
       <input type="text" id="f-title" placeholder="例）〇〇資料の作成">
     </div>
     <div class="field">
+      <label id="start-label">開始日</label>
+      <input type="date" id="f-start-date">
+    </div>
+    <div class="field">
+      <label>時刻</label>
+      <input type="time" id="f-time" step="900">
+    </div>
+    <div class="field field-btn">
+      <label>&nbsp;</label>
+      <button class="btn btn-primary" id="addBtn">追加する</button>
+    </div>
+  </div>
+  <div class="form-detail-toggle-row">
+    <button type="button" class="btn btn-secondary" id="formDetailToggle" aria-expanded="false">詳細設定 ▾</button>
+  </div>
+  <div class="form-grid" id="formDetailGrid" style="display:none;">
+    <div class="field">
       <label>優先度</label>
       <select id="f-importance">
         <option value="1">1</option>
@@ -628,20 +657,8 @@
       <select id="f-category"></select>
     </div>
     <div class="field">
-      <label id="start-label">開始日</label>
-      <input type="date" id="f-start-date">
-    </div>
-    <div class="field">
-      <label>時刻</label>
-      <input type="time" id="f-time" step="900">
-    </div>
-    <div class="field">
       <label>終了日（任意）</label>
       <input type="date" id="f-deadline">
-    </div>
-    <div class="field field-btn">
-      <label>&nbsp;</label>
-      <button class="btn btn-primary" id="addBtn">追加する</button>
     </div>
   </div>
 </div>
@@ -665,29 +682,22 @@
     <input type="text" id="filterKeyword" class="text-input" placeholder="🔍 タイトルで検索">
     <span class="spacer"></span>
     <span class="filters-hint" id="selectedCount"></span>
-    <button class="btn btn-cal" id="exportIcsBtn">選択した予定をまとめてカレンダーに追加（.ics）</button>
   </div>
-  <div class="filters-hint filters-note">※一覧内の項目はクリックして直接編集できます（自動保存）。ドラッグでの並び替えは、並び順「カスタム」選択時のみ使えます。</div>
+  <div class="filters-hint filters-note">※一覧内の項目はクリックして直接編集できます（自動保存）。タイトル左の▸で優先度・負荷・見積もりを表示できます。ドラッグでの並び替えは、並び順「カスタム」選択時のみ使えます。</div>
   <div class="table-scroll">
   <table>
     <colgroup>
       <col style="width:26px;">
       <col style="width:30px;">
-      <col style="width:220px;">
-      <col style="width:64px;">
-      <col style="width:80px;">
-      <col style="width:88px;">
+      <col>
       <col style="width:215px;">
       <col style="width:124px;">
     </colgroup>
     <thead>
       <tr>
         <th></th>
-        <th><input type="checkbox" id="selectAllCheckbox"></th>
+        <th><input type="checkbox" id="selectAllCheckbox" title="チェックすると今日のタイムラインにも一時的に表示します"></th>
         <th>タイトル</th>
-        <th>優先度</th>
-        <th>負荷</th>
-        <th>見積もり</th>
         <th>開始日〜終了日</th>
         <th>操作</th>
       </tr>
@@ -732,7 +742,7 @@
   <summary>💡 Googleカレンダーへの登録方法</summary>
   <div class="hint-body">
     「📅カレンダーに追加」（1件ずつ）を押すと、その予定を入力済みの状態でGoogleカレンダーの追加画面が新しいタブで開きます。内容を確認して保存してください。<br><br>
-    複数まとめて登録したい場合は、一覧のチェックボックスでタスクを選び「選択した予定をまとめてカレンダーに追加（.ics）」を押すとファイルがダウンロードされます。Googleカレンダー（PC版）の右上「設定」→「インポート/エクスポート」→「インポート」でそのファイルを選ぶと、選んだ予定がまとめて登録されます（通知設定もこちらのみ反映）。開始日時・開始時刻を入力していないタスクは、一覧の表示順（並び順・ドラッグの結果を反映）に、今の時刻から見積もり時間ぶんずつ連続で自動的に予定を詰めて登録します。このアプリからGoogleへ直接データを送ることはありません。
+    まとめて登録したい場合は、「今日のスケジュール」の☁️「この日をカレンダーに追加」を使うと、表示中の日の予定をまとめて追加できます。このアプリからGoogleへ直接データを送ることはありません。
   </div>
 </details>
 
@@ -833,6 +843,7 @@ function migrateScheduleOnlySourceLinks() {
 migrateLegacyState();
 migrateScheduleOnlySourceLinks();
 let selectedIds = new Set();
+let openDetailIds = new Set(); // タスク一覧で「詳細行」（優先度・負荷・見積もり）を開いている行のid
 let draggedId = null;
 let scheduleViewDate = new Date(); // 「スケジュール」で表示中の日付（日付ナビで切り替える。既定は今日）
 let scheduleDrag = null; // スケジュールのブロックをドラッグして時刻変更する際の作業用状態
@@ -864,6 +875,7 @@ function deleteTaskWithUndo(task) {
   const wasSelected = selectedIds.has(task.id);
   state.tasks.splice(index, 1);
   selectedIds.delete(task.id); // チェック状態が残って選択件数がズレたままにならないようにする
+  openDetailIds.delete(task.id);
   saveData();
   renderAll();
   showUndoToast(`「${task.title}」を削除しました`, () => {
@@ -1099,17 +1111,14 @@ function disconnectGcal() {
 function updateGcalUI() {
   const statusEl = document.getElementById("gcalStatus");
   const btnEl = document.getElementById("gcalConnectBtn");
-  const exportBtnEl = document.getElementById("exportIcsBtn");
   const scheduleGcalBtnEl = document.getElementById("scheduleGcalBtn");
   if (isGcalConnected()) {
     statusEl.textContent = "✅ Googleカレンダー連携済み";
     btnEl.textContent = "連携を解除";
-    exportBtnEl.textContent = "選択した予定をまとめてGoogleカレンダーに直接追加";
     scheduleGcalBtnEl.textContent = "☁️ この日をGoogleカレンダーに直接追加";
   } else {
     statusEl.textContent = "Googleカレンダー未連携";
     btnEl.textContent = "連携する";
-    exportBtnEl.textContent = "選択した予定をまとめてカレンダーに追加（.ics）";
     scheduleGcalBtnEl.textContent = "📅 この日をカレンダーに追加（.ics）";
   }
   renderTasks(); // 📅追加ボタンの見た目・挙動を連携状態に合わせて更新
@@ -1211,33 +1220,6 @@ function scheduleForExport(tasks, refDate = new Date()) {
   });
 }
 
-function buildIcs(tasks) {
-  const reminderMinutes = Number(state.settings.reminderMinutes) || 0;
-  const now = fmtGCal(new Date());
-  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//WorkCapacityApp//JA", "CALSCALE:GREGORIAN"];
-  for (const { task: t, start, end } of scheduleForExport(tasks)) {
-    const details = taskDetails(t);
-    lines.push("BEGIN:VEVENT");
-    lines.push(`UID:${t.id}@workcapacityapp`);
-    lines.push(`DTSTAMP:${now}`);
-    lines.push(`DTSTART:${fmtGCal(start)}`);
-    lines.push(`DTEND:${fmtGCal(end)}`);
-    lines.push(`SUMMARY:${icsEscape(t.title || "(無題のタスク)")}`);
-    if (details) lines.push(`DESCRIPTION:${icsEscape(details)}`);
-    if (reminderMinutes > 0) {
-      lines.push("BEGIN:VALARM");
-      lines.push(`TRIGGER:-PT${reminderMinutes}M`);
-      lines.push("ACTION:DISPLAY");
-      lines.push("DESCRIPTION:リマインダー");
-      lines.push("END:VALARM");
-    }
-    lines.push("END:VEVENT");
-  }
-  lines.push("END:VCALENDAR");
-  return lines.join("\r\n");
-}
-
-// buildIcsは「時刻未設定タスクの自動穴埋め」を内部でやり直してしまうため、
 // スケジュール表示のように「複製」で増えた分（extraTimes）まで含めて“見えている通り”に書き出したい場合はこちらを使う。
 // occurrences は getScheduledOccurrences() が返す { task, start, end, occKey } の配列。
 function buildIcsFromOccurrences(occurrences) {
@@ -1317,29 +1299,18 @@ function renderTasks() {
   }
 
   for (const t of tasks) {
+    const isOpen = openDetailIds.has(t.id);
     const tr = document.createElement("tr");
     tr.dataset.id = t.id;
     tr.innerHTML = `
       <td class="drag-handle ${orderMode ? "" : "disabled"}" title="${orderMode ? "ドラッグで並び替え" : "「カスタム」並び順の時だけドラッグできます"}">⠿</td>
       <td><input type="checkbox" class="task-select" data-id="${t.id}" ${selectedIds.has(t.id) ? "checked" : ""}></td>
       <td class="title-cell">
-        <input type="text" class="inline-edit" data-id="${t.id}" data-field="title" value="${escapeHtml(t.title)}">
+        <div class="title-cell-row">
+          <button type="button" class="detail-toggle" data-id="${t.id}" title="優先度・負荷・見積もりを表示" aria-expanded="${isOpen}">${isOpen ? "▾" : "▸"}</button>
+          <input type="text" class="inline-edit" data-id="${t.id}" data-field="title" value="${escapeHtml(t.title)}">
+        </div>
         <select class="inline-edit category-input" data-id="${t.id}" data-field="category">${categoryOptions(t.category)}</select>
-      </td>
-      <td>
-        <select class="inline-edit prio-${importanceBucket(t.importance)}" data-id="${t.id}" data-field="importance">
-          ${importanceOptions(t.importance)}
-        </select>
-      </td>
-      <td>
-        <select class="inline-edit" data-id="${t.id}" data-field="load">
-          ${pctOptions(t.load)}
-        </select>
-      </td>
-      <td>
-        <select class="inline-edit" data-id="${t.id}" data-field="estimate">
-          ${estimateOptions(t.estimate)}
-        </select>
       </td>
       <td class="start-cell">
         <div class="start-cell-row">
@@ -1356,6 +1327,36 @@ function renderTasks() {
       </td>
     `;
     body.appendChild(tr);
+
+    const detailTr = document.createElement("tr");
+    detailTr.className = "detail-row";
+    detailTr.dataset.detailFor = t.id;
+    detailTr.style.display = isOpen ? "" : "none";
+    detailTr.innerHTML = `
+      <td colspan="5">
+        <div class="detail-row-inner">
+          <div class="field">
+            <label>優先度</label>
+            <select class="inline-edit prio-${importanceBucket(t.importance)}" data-id="${t.id}" data-field="importance">
+              ${importanceOptions(t.importance)}
+            </select>
+          </div>
+          <div class="field">
+            <label>負荷</label>
+            <select class="inline-edit" data-id="${t.id}" data-field="load">
+              ${pctOptions(t.load)}
+            </select>
+          </div>
+          <div class="field">
+            <label>見積もり</label>
+            <select class="inline-edit" data-id="${t.id}" data-field="estimate">
+              ${estimateOptions(t.estimate)}
+            </select>
+          </div>
+        </div>
+      </td>
+    `;
+    body.appendChild(detailTr);
   }
   updateSelectedCount();
   updateSelectAllCheckbox();
@@ -1468,6 +1469,16 @@ document.getElementById("addBtn").addEventListener("click", () => {
   renderAll();
 });
 
+// 「詳細設定」の開閉（優先度・負荷・見積もり・カテゴリ・終了日）。閉じていても値はDOM上に保持されたままで、
+// readForm()はそのままフォーム送信時に読める（＝見た目を隠しているだけ）。
+document.getElementById("formDetailToggle").addEventListener("click", (e) => {
+  const grid = document.getElementById("formDetailGrid");
+  const opening = grid.style.display === "none";
+  grid.style.display = opening ? "" : "none";
+  e.currentTarget.textContent = opening ? "詳細設定 ▴" : "詳細設定 ▾";
+  e.currentTarget.setAttribute("aria-expanded", String(opening));
+});
+
 // time欄（追加フォーム・一覧の行内編集どちらも）は、フォーカスが残ったままページを
 // マウスホイールでスクロールすると、ブラウザ標準の「フォーカス中のスピナー入力をホイールで増減する」
 // 挙動により、ユーザーが何も入力していないのに時刻が勝手に入ってしまうことがある（Chromium系で確認）。
@@ -1477,7 +1488,26 @@ document.addEventListener("wheel", () => {
   if (el && el.tagName === "INPUT" && el.type === "time") el.blur();
 }, { passive: true });
 
+// 行ごとの「詳細行」（優先度・負荷・見積もり）の開閉。openDetailIdsで行ごとに独立して状態を持つ。
+function toggleDetailRow(id) {
+  const detailTr = document.querySelector(`.detail-row[data-detail-for="${id}"]`);
+  const toggleBtn = document.querySelector(`.detail-toggle[data-id="${id}"]`);
+  if (!detailTr) return;
+  const opening = detailTr.style.display === "none";
+  detailTr.style.display = opening ? "" : "none";
+  if (opening) openDetailIds.add(id); else openDetailIds.delete(id);
+  if (toggleBtn) {
+    toggleBtn.textContent = opening ? "▾" : "▸";
+    toggleBtn.setAttribute("aria-expanded", String(opening));
+  }
+}
+
 document.getElementById("taskBody").addEventListener("click", (e) => {
+  const toggleBtn = e.target.closest(".detail-toggle");
+  if (toggleBtn) {
+    toggleDetailRow(toggleBtn.dataset.id);
+    return;
+  }
   const btn = e.target.closest("button");
   if (!btn) return;
   const id = btn.dataset.id;
@@ -1749,37 +1779,6 @@ document.getElementById("selectAllCheckbox").addEventListener("change", (e) => {
   });
   updateSelectedCount();
   renderScheduleChart();
-});
-
-document.getElementById("exportIcsBtn").addEventListener("click", async () => {
-  // 「一覧の上から順」= 現在テーブルに描画されている順番（フィルター・並び順・ドラッグ結果を反映）
-  const displayOrder = Array.from(document.querySelectorAll("#taskBody tr")).map(tr => tr.dataset.id);
-  const selected = state.tasks
-    .filter(t => selectedIds.has(t.id))
-    .sort((a, b) => displayOrder.indexOf(a.id) - displayOrder.indexOf(b.id));
-  if (selected.length === 0) { alert("カレンダーに追加するタスクにチェックを入れてください。"); return; }
-
-  if (isGcalConnected()) {
-    const btn = document.getElementById("exportIcsBtn");
-    btn.disabled = true;
-    const scheduled = scheduleForExport(selected); // 時刻未設定のものは表示順に自動で穴埋め
-    let okCount = 0;
-    const errors = [];
-    for (const { task, start, end } of scheduled) {
-      try {
-        await addEventToGcalDirect(task, start, end);
-        okCount++;
-      } catch (err) {
-        errors.push(`${task.title}: ${err.message}`);
-      }
-    }
-    btn.disabled = false;
-    alert(errors.length
-      ? `${okCount}件追加しました。\n以下は失敗しました：\n${errors.join("\n")}`
-      : `${okCount}件をGoogleカレンダーに直接追加しました。`);
-  } else {
-    downloadIcs("schedule_tasks.ics", buildIcs(selected));
-  }
 });
 
 // 並び替え（sortBy が「order」の時だけ⠿ハンドルから開始できる）。
