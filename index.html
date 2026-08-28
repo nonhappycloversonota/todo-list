@@ -814,7 +814,24 @@ function migrateLegacyState() {
     state.categories = state.categories.map(c => typeof c === "string" ? { name: c, type: "work" } : c);
   }
 }
+// 📥ペーストで複製されたタスク（scheduleOnly: true）にsourceTaskIdを持たせて負荷（load）を
+// コピー元の最新値から解決する仕組み（resolveTaskLoad参照）を追加する前は、貼り付けられた
+// タスクがsourceTaskIdを持たず、負荷が貼り付け時点の値のまま凍結されていた。
+// そうした既存タスクについて、タイトルが完全一致する通常タスク（一覧に表示されるscheduleOnlyでないタスク）が
+// 1件だけ見つかった場合に限り、そのidをsourceTaskIdとして自動的にリンクし直す。
+// 同名タスクが複数ある/該当なしの場合は誤って別タスクにリンクする危険があるため、安全側に倒して何もしない
+// （その場合はresolveTaskLoad()の既存フォールバックにより、これまで通り凍結された値が使われる）
+function migrateScheduleOnlySourceLinks() {
+  state.tasks.forEach(t => {
+    if (!t.scheduleOnly || t.sourceTaskId) return;
+    const candidates = state.tasks.filter(o => !o.scheduleOnly && o.title === t.title);
+    if (candidates.length === 1) {
+      t.sourceTaskId = candidates[0].id;
+    }
+  });
+}
 migrateLegacyState();
+migrateScheduleOnlySourceLinks();
 let selectedIds = new Set();
 let draggedId = null;
 let scheduleViewDate = new Date(); // 「スケジュール」で表示中の日付（日付ナビで切り替える。既定は今日）
@@ -1451,6 +1468,15 @@ document.getElementById("addBtn").addEventListener("click", () => {
   renderAll();
 });
 
+// time欄（追加フォーム・一覧の行内編集どちらも）は、フォーカスが残ったままページを
+// マウスホイールでスクロールすると、ブラウザ標準の「フォーカス中のスピナー入力をホイールで増減する」
+// 挙動により、ユーザーが何も入力していないのに時刻が勝手に入ってしまうことがある（Chromium系で確認）。
+// ホイール操作が発生した瞬間にフォーカスを外すことで、ページのスクロール自体は妨げずに値の変化だけを防ぐ。
+document.addEventListener("wheel", () => {
+  const el = document.activeElement;
+  if (el && el.tagName === "INPUT" && el.type === "time") el.blur();
+}, { passive: true });
+
 document.getElementById("taskBody").addEventListener("click", (e) => {
   const btn = e.target.closest("button");
   if (!btn) return;
@@ -1535,6 +1561,7 @@ document.getElementById("importDataInput").addEventListener("change", (e) => {
     if (state.settings.workLoadCap === undefined) state.settings.workLoadCap = 100;
     if (state.settings.theme === undefined) state.settings.theme = "system";
     migrateLegacyState(); // 旧形式のバックアップ（負荷/優先度が文字列、カテゴリが文字列配列）でも読み込めるようにする
+    migrateScheduleOnlySourceLinks(); // sourceTaskIdを持たない旧いscheduleOnlyタスクを、タイトル一致で自動リンクし直す
     selectedIds = new Set();
 
     saveData();
@@ -2088,7 +2115,7 @@ document.addEventListener("pointermove", (e) => {
 });
 document.addEventListener("pointerup", () => {
   if (!scheduleDrag) return;
-  const { taskId, occKey, blockEl, moved, mode, rangeStart } = scheduleDrag;
+  const { taskId, occKey, blockEl, moved, mode, rangeStart, startTopPx } = scheduleDrag;
   blockEl.classList.remove("sb-dragging", "sb-resizing");
   if (!moved) { scheduleDrag = null; return; } // 動かしていなければ何も変更しない（誤操作防止）
 
@@ -2099,6 +2126,14 @@ document.addEventListener("pointerup", () => {
   newStartMin = Math.max(0, Math.min(newStartMin, 24 * 60 - 15));
   const hh = Math.floor(newStartMin / 60), mm = newStartMin % 60;
   const newTime = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+
+  // ドラッグ開始時点（つかんだ瞬間）の位置を同じ丸め方で求めておく。しきい値(4px)をわずかに超えただけの
+  // 誤操作（クリックしたつもりが少しブレた等）だと、最終的な位置が開始位置と実質同じになることが多い。
+  // その場合にまで書き込むと、時刻未設定タスク（09:00などに仮表示されているだけ）が、
+  // 操作していないのに「時刻を設定した」ことにされてしまうため、位置が実際に変わった時だけ書き込む。
+  const originalMinutesFromRangeStart = (startTopPx / SCHEDULE_PX_PER_HOUR) * 60;
+  let originalStartMin = Math.round((rangeStart + originalMinutesFromRangeStart) / 15) * 15;
+  originalStartMin = Math.max(0, Math.min(originalStartMin, 24 * 60 - 15));
 
   const task = state.tasks.find(t => t.id === taskId);
   scheduleDrag = null;
@@ -2124,7 +2159,10 @@ document.addEventListener("pointerup", () => {
     task.estimate = durationMin / 60;
   }
 
-  if (mode !== "resize-bottom") {
+  // 時刻未設定タスク（09:00や自動詰めの位置に仮表示されているだけ）を、実質動かしていないのに
+  // 「時刻を設定した」ことにしないためのガード。既に時刻が入っているタスクには影響しない（元々同じ値が入るだけのため）。
+  const noRealMove = newStartMin === originalStartMin;
+  if (mode !== "resize-bottom" && !(noRealMove && !task.time)) {
     if (extraIdx >= 0 && Array.isArray(task.extraTimes) && task.extraTimes[extraIdx] !== undefined) {
       // 「複製」で増えた追加の時刻を動かした場合は、その時刻だけを変更する（開始日・本来の時刻には触れない）
       task.extraTimes[extraIdx] = newTime;
