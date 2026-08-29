@@ -565,6 +565,7 @@
     <button class="btn btn-secondary" id="schedulePasteBtn" title="コピーしたスケジュールを表示中の日に貼り付けます">📥 ペースト</button>
     <span class="schedule-clipboard-hint" id="scheduleClipboardHint"></span>
     <button class="btn btn-cal" id="scheduleGcalBtn" title="表示中の日のスケジュールに表示されている日程・タスクを、そのままカレンダーに追加します">☁️ この日をカレンダーに追加</button>
+    <button class="btn btn-danger" id="scheduleResetDayBtn" title="表示中の日が開始日になっているタスクを、まとめて削除します">🗑️ この日をリセット</button>
   </div>
   <div class="schedule-outer">
     <div class="schedule-hours" id="scheduleHours"></div>
@@ -680,6 +681,7 @@
     </select>
     <select id="filterCategory"></select>
     <input type="text" id="filterKeyword" class="text-input" placeholder="🔍 タイトルで検索">
+    <button class="btn btn-secondary" id="autoScheduleBtn" title="未着手かつ開始日・時刻が未設定のタスクを、優先順位に従って自動的に空き時間へ配置します">🪄 自動でスケジュールを組む</button>
     <span class="spacer"></span>
     <span class="filters-hint" id="selectedCount"></span>
   </div>
@@ -1728,6 +1730,28 @@ document.getElementById("scheduleGcalBtn").addEventListener("click", async () =>
   }
 });
 
+// 「この日をリセット」＝表示中の日が本来の開始日になっている通常タスクだけを、まとめて削除する。
+// scheduleOnly（コピペで追加したその日限定タスク）や、チェックで一時的に乗っているだけの他の日のタスクには触れない。
+document.getElementById("scheduleResetDayBtn").addEventListener("click", () => {
+  const dateStr = viewDateKey(scheduleViewDate);
+  const targets = state.tasks.filter(t => t.start === dateStr && !t.scheduleOnly);
+  if (!targets.length) { alert("表示中の日には削除する予定がありません。"); return; }
+
+  const dateLabel = `${scheduleViewDate.getMonth() + 1}月${scheduleViewDate.getDate()}日`;
+  if (!confirm(`表示中の日（${dateLabel}）の予定を${targets.length}件削除します。よろしいですか？`)) return;
+
+  const targetIds = new Set(targets.map(t => t.id));
+  state.tasks = state.tasks.filter(t => !targetIds.has(t.id));
+  targetIds.forEach(id => { selectedIds.delete(id); openDetailIds.delete(id); });
+  saveData();
+  renderAll();
+  showUndoToast(`表示中の日の予定を${targets.length}件削除しました`, () => {
+    state.tasks.push(...targets);
+    saveData();
+    renderAll();
+  });
+});
+
 function updateSelectedCount() {
   document.getElementById("selectedCount").textContent = selectedIds.size > 0 ? `${selectedIds.size}件選択中` : "";
 }
@@ -2202,6 +2226,128 @@ function findFreeSlot(occupiedRanges, durationMs, refDate) {
   const minsFromDayStart = Math.min(Math.ceil((lastEnd - dayStart) / stepMs) * 15, 24 * 60 - 15);
   return new Date(dayStart.getTime() + minsFromDayStart * 60 * 1000);
 }
+
+/* ============ 自動でスケジュールを組む ============ */
+
+// 「未着手」かつ開始日・時刻がともに未設定のタスクだけを対象に、優先順位（緊急度＋重要度）の高い順に
+// 実行時点の「今日」から最大90日先までの空き時間へ自動的に配置する。
+// 一部でも手動入力済み（start・timeのどちらかが入っている）のタスクは対象外＝上書きしない。
+// 配置は最後にまとめてtask.start/task.timeへ反映し、まとめて1回のUndoで取り消せるようにする。
+function autoScheduleTasks() {
+  const pad = n => String(n).padStart(2, "0");
+  const dateKeyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const today = new Date(); today.setHours(0, 0, 0, 0); // 表示中の日ではなく、実行時点の実際の「今日」を起点にする
+
+  const targets = state.tasks.filter(t => !t.scheduleOnly && t.status === "not_started" && !t.start && !t.time);
+  if (!targets.length) {
+    alert("自動でスケジュールを組める対象のタスクがありません（未着手かつ、開始日・時刻がともに未設定のタスクが対象です）。");
+    return;
+  }
+
+  // 優先順位スコア＝緊急度スコア＋重要度スコアの降順。Array#sortはstable（ES2019+）なので、
+  // 同点のタスクはtargets（=state.tasksの元の並び＝カスタム並び順）の順のまま維持される。
+  const scored = targets.map(t => {
+    let urgency = 0;
+    if (t.deadline) {
+      const deadlineDate = new Date(t.deadline + "T00:00:00");
+      const diffDays = Math.round((deadlineDate - today) / (24 * 60 * 60 * 1000));
+      const remainingDays = Math.max(0, diffDays); // 期限切れ・今日締切はどちらも「残り0日」として扱う
+      urgency = Math.max(0, 30 - remainingDays);
+    }
+    const importance = (Number(t.importance) || 0) * 6;
+    return { task: t, score: urgency + importance };
+  });
+  scored.sort((a, b) => b.score - a.score);
+
+  // このボタン押下内で新たに配置した分を、実際のtask.start/timeにはまだ反映せず、ここでローカルに集計しながら進める
+  // （全件の配置先が決まってから、まとめてtaskへ反映するため）
+  const runOccupied = {}; // dateKey -> [{start:Date, end:Date}]（このボタン押下内で確定した分）
+  const runLoad = {}; // dateKey -> このボタン押下内で確定した仕事カテゴリの負荷合計
+  const placements = []; // { task, start: "YYYY-MM-DD", time: "HH:MM" }
+
+  function occupiedForDate(dateObj, dateKey) {
+    const base = getScheduledOccurrences(dateObj).map(item => ({ start: item.start, end: item.end }));
+    return base.concat(runOccupied[dateKey] || []);
+  }
+  // renderWorkLoad()と同じ集計ロジック（表示中の日固定ではなく、任意の日について計算できるようにしたもの）
+  function workLoadForDate(dateObj, dateKey) {
+    const relevant = getTodayTasksForSchedule(dateObj);
+    let load = relevant.filter(t => isWorkCategory(t.category)).reduce((sum, t) => sum + resolveTaskLoad(t), 0);
+    for (const t of relevant) {
+      if (isWorkCategory(t.category) && Array.isArray(t.extraTimes) && t.extraTimes.length) {
+        load += t.extraTimes.length * resolveTaskLoad(t);
+      }
+    }
+    return load + (runLoad[dateKey] || 0);
+  }
+
+  const cap = Number(state.settings.workLoadCap) || 0;
+  const MAX_DAYS = 90;
+  let placedCount = 0;
+  let skippedCount = 0;
+
+  for (const { task } of scored) {
+    const durationMs = (Number(task.estimate) || 1) * 60 * 60 * 1000;
+    const isWork = isWorkCategory(task.category);
+    let placed = false;
+    for (let offset = 0; offset <= MAX_DAYS; offset++) {
+      const candidate = new Date(today);
+      candidate.setDate(candidate.getDate() + offset);
+      const dateKey = dateKeyOf(candidate);
+
+      if (isWork) {
+        const load = workLoadForDate(candidate, dateKey);
+        if (load + resolveTaskLoad(task) > cap) continue; // その日は仕事の負荷が上限を超えるため諦めて翌日を試す
+      }
+
+      const occupied = occupiedForDate(candidate, dateKey);
+      const slotStart = findFreeSlot(occupied, durationMs, candidate);
+      const slotEnd = new Date(slotStart.getTime() + durationMs);
+      const dayStart = new Date(candidate); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      // findFreeSlotは「本当に空きが見つかった」場合と「空きが無く直近の予定の直後へ無理やり置いた」場合を
+      // 区別せず返すため、ここで実際に重ならず1日（0:00〜24:00）に収まっているかを別途確認する
+      const genuinelyFree = slotStart >= dayStart && slotEnd <= dayEnd &&
+        !occupied.some(r => slotStart < r.end && slotEnd > r.start);
+      if (!genuinelyFree) continue; // この日には時間的な空きが無いので翌日を試す
+
+      // 確定：ローカルの占有・負荷集計に反映してから、次のタスクの配置に進む
+      (runOccupied[dateKey] ||= []).push({ start: slotStart, end: slotEnd });
+      if (isWork) runLoad[dateKey] = (runLoad[dateKey] || 0) + resolveTaskLoad(task);
+      placements.push({ task, start: dateKey, time: fmtHM(slotStart) });
+      placed = true;
+      break;
+    }
+    if (placed) placedCount++; else skippedCount++;
+  }
+
+  if (!placements.length) {
+    alert("空きが見つからず、1件も配置できませんでした。");
+    return;
+  }
+
+  // まとめて確定：Undo用に元の値（対象条件から、いずれも空文字のはず）を控えてから反映する
+  const prevValues = placements.map(p => ({ task: p.task, start: p.task.start, time: p.task.time }));
+  for (const p of placements) {
+    p.task.start = p.start;
+    p.task.time = p.time;
+  }
+  saveData();
+  renderAll();
+
+  const message = skippedCount > 0
+    ? `${placedCount}件配置しました（${skippedCount}件は空きが見つからず未配置でした）`
+    : `${placedCount}件配置しました`;
+  showUndoToast(message, () => {
+    for (const prev of prevValues) {
+      prev.task.start = prev.start;
+      prev.task.time = prev.time;
+    }
+    saveData();
+    renderAll();
+  });
+}
+document.getElementById("autoScheduleBtn").addEventListener("click", autoScheduleTasks);
 
 // タスクを「複製」する。タスク一覧には増やさず、そのタスクの追加の時刻（task.extraTimes）に
 // 1件足すことで、スケジュール上にだけもう1つブロックを出す。時刻はその日の空いている時間を自動で選ぶ。
