@@ -1730,23 +1730,35 @@ document.getElementById("scheduleGcalBtn").addEventListener("click", async () =>
   }
 });
 
-// 「この日をリセット」＝表示中の日が本来の開始日になっている通常タスクだけを、まとめて削除する。
-// scheduleOnly（コピペで追加したその日限定タスク）や、チェックで一時的に乗っているだけの他の日のタスクには触れない。
+// 「この日をリセット」＝表示中の日が本来の開始日になっている通常タスクをまとめて削除し、
+// さらにチェックで一時的に乗っているだけの他の日のタスクも、選択解除して表示から外す
+// （タスク自体は削除しない＝本来の予定日には影響を与えない）。
+// scheduleOnly（コピペで追加したその日限定タスク）には触れない。
 document.getElementById("scheduleResetDayBtn").addEventListener("click", () => {
   const dateStr = viewDateKey(scheduleViewDate);
   const targets = state.tasks.filter(t => t.start === dateStr && !t.scheduleOnly);
-  if (!targets.length) { alert("表示中の日には削除する予定がありません。"); return; }
+  const temporary = state.tasks.filter(t => selectedIds.has(t.id) && t.start !== dateStr);
+  if (!targets.length && !temporary.length) { alert("表示中の日には削除する予定がありません。"); return; }
 
   const dateLabel = `${scheduleViewDate.getMonth() + 1}月${scheduleViewDate.getDate()}日`;
-  if (!confirm(`表示中の日（${dateLabel}）の予定を${targets.length}件削除します。よろしいですか？`)) return;
+  const parts = [];
+  if (targets.length) parts.push(`予定を${targets.length}件削除し`);
+  if (temporary.length) parts.push(`一時的に表示していた${temporary.length}件の表示を解除`);
+  if (!confirm(`表示中の日（${dateLabel}）の${parts.join("、")}します。よろしいですか？`)) return;
 
   const targetIds = new Set(targets.map(t => t.id));
+  const temporaryIds = temporary.map(t => t.id);
   state.tasks = state.tasks.filter(t => !targetIds.has(t.id));
   targetIds.forEach(id => { selectedIds.delete(id); openDetailIds.delete(id); });
+  temporaryIds.forEach(id => selectedIds.delete(id));
   saveData();
   renderAll();
-  showUndoToast(`表示中の日の予定を${targets.length}件削除しました`, () => {
+  const msgParts = [];
+  if (targets.length) msgParts.push(`削除${targets.length}件`);
+  if (temporary.length) msgParts.push(`表示解除${temporary.length}件`);
+  showUndoToast(`表示中の日の予定を${msgParts.join("・")}しました`, () => {
     state.tasks.push(...targets);
+    temporaryIds.forEach(id => selectedIds.add(id));
     saveData();
     renderAll();
   });
