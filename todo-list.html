@@ -151,11 +151,23 @@
     padding-bottom: var(--space-3); border-bottom: 1px solid var(--border);
   }
   .settings-row { display: flex; align-items: center; gap: var(--space-2); font-size: 0.88rem; margin-bottom: var(--space-3); flex-wrap: wrap; }
+  .settings-row:last-child { margin-bottom: 0; }
   .settings-row > span:first-child { min-width: 96px; color: var(--text-sub); }
   .settings-row input, .settings-row select {
     padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius-control);
     background: var(--bg); color: var(--text); font-size: 0.88rem;
   }
+  /* ⚙️設定パネル：関連する項目をカードで区切り、見出しを添えて一目で分かるようにする */
+  .settings-section {
+    background: var(--card-alt); border: 1px solid var(--border); border-radius: var(--radius-panel);
+    padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3);
+  }
+  .settings-section-title {
+    font-size: 0.76rem; font-weight: 700; color: var(--text-sub); letter-spacing: .02em;
+    margin-bottom: var(--space-2); display: flex; align-items: center; gap: 6px;
+  }
+  .settings-save-row { margin-bottom: var(--space-4); }
+  .settings-save-row .btn { padding: 9px 22px; }
   /* 「設定」系カードは日々確認する主役情報（キャパ消費・スケジュール）より控えめに見せ、優先度の差を伝える */
   .card-secondary { box-shadow: var(--shadow-sm); }
   .card-secondary h2 { font-size: 1.02rem; color: var(--text-sub); }
@@ -365,9 +377,12 @@
     margin-bottom: var(--space-5); padding-bottom: var(--space-3); border-bottom: 1px solid var(--border);
   }
   .schedule-card-header h2 { margin: 0; padding-bottom: 0; border-bottom: none; }
+  .schedule-load-summary {
+    display: flex; flex-direction: column; gap: 5px;
+    margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 1px dashed var(--border);
+  }
   .schedule-work-load {
     display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85rem;
-    margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 1px dashed var(--border);
   }
   .schedule-work-load .pct { font-weight: 700; font-size: 0.95rem; letter-spacing: -.01em; }
   /* 下の2段ボタン（幅100%）と横幅が揃うよう、日付欄を伸ばして行全体を埋める */
@@ -524,48 +539,71 @@
 
 <div class="card card-secondary" id="settingsPanel" style="display:none;">
   <h2>⚙️ 設定</h2>
-  <div class="settings-row">
-    <span>テーマ</span>
-    <select id="themeSelect">
-      <option value="system">システムに合わせる</option>
-      <option value="light">ライト</option>
-      <option value="dark">ダーク</option>
-    </select>
-  </div>
-  <div class="settings-row">
-    <span>仕事の負荷キャパ</span>
-    <input type="number" id="workLoadCap" min="0" step="10">
-    <span>%</span>
-  </div>
-  <div class="settings-row">
-    <span>通知（何分前）</span>
-    <select id="reminderMinutes">
-      <option value="0">通知なし</option>
-      <option value="5">5分前</option>
-      <option value="10">10分前</option>
-      <option value="15">15分前</option>
-      <option value="30">30分前</option>
-      <option value="60">1時間前</option>
-      <option value="1440">1日前</option>
-    </select>
-  </div>
-  <button class="btn btn-secondary" id="saveSettingsBtn">設定を保存</button>
-  <div class="settings-row" style="margin-top: var(--space-4); align-items: flex-start; flex-wrap: wrap;">
-    <span style="padding-top: 8px;">タスク一覧下のタブ</span>
-    <div style="flex: 1; min-width: 200px;">
-      <div id="cycleGroupRows" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
-      <div class="category-add-row">
-        <input type="text" id="newCycleGroupInput" class="text-input" placeholder="新しい区分名" style="flex:1; min-width:160px;">
-        <button class="btn btn-secondary" id="addCycleGroupBtn">＋ 追加</button>
-      </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">🎨 表示</div>
+    <div class="settings-row">
+      <span>テーマ</span>
+      <select id="themeSelect">
+        <option value="system">システムに合わせる</option>
+        <option value="light">ライト</option>
+        <option value="dark">ダーク</option>
+      </select>
     </div>
   </div>
-  <div class="settings-row" style="margin-top: var(--space-4); flex-wrap: wrap;">
-    <span>データのバックアップ</span>
-    <button class="btn btn-secondary" id="exportDataBtn">💾 エクスポート</button>
-    <button class="btn btn-secondary" id="importDataBtn">📂 インポート</button>
-    <input type="file" id="importDataInput" accept="application/json" style="display:none;">
+
+  <div class="settings-section">
+    <div class="settings-section-title">📊 負荷キャパ</div>
+    <div class="settings-row">
+      <span>仕事</span>
+      <input type="number" id="workLoadCap" min="0" step="10">
+      <span>%</span>
+    </div>
+    <div class="settings-row">
+      <span>プライベート</span>
+      <input type="number" id="privateLoadCap" min="0" step="10">
+      <span>%</span>
+    </div>
   </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">🔔 通知</div>
+    <div class="settings-row">
+      <span>何分前</span>
+      <select id="reminderMinutes">
+        <option value="0">通知なし</option>
+        <option value="5">5分前</option>
+        <option value="10">10分前</option>
+        <option value="15">15分前</option>
+        <option value="30">30分前</option>
+        <option value="60">1時間前</option>
+        <option value="1440">1日前</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="settings-save-row">
+    <button class="btn btn-primary" id="saveSettingsBtn">💾 設定を保存</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">🗂️ タスク一覧下のタブ</div>
+    <div id="cycleGroupRows" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
+    <div class="category-add-row">
+      <input type="text" id="newCycleGroupInput" class="text-input" placeholder="新しい区分名" style="flex:1; min-width:160px;">
+      <button class="btn btn-secondary" id="addCycleGroupBtn">＋ 追加</button>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">💾 データのバックアップ</div>
+    <div class="settings-row" style="margin-bottom: 0;">
+      <button class="btn btn-secondary" id="exportDataBtn">💾 エクスポート</button>
+      <button class="btn btn-secondary" id="importDataBtn">📂 インポート</button>
+      <input type="file" id="importDataInput" accept="application/json" style="display:none;">
+    </div>
+  </div>
+
   <details class="hint">
     <summary>設定に関するヒント</summary>
     <div class="hint-body">
@@ -583,9 +621,15 @@
   <div class="schedule-card-header">
     <h2>✅ Todoリスト</h2>
   </div>
-  <div class="schedule-work-load">
-    <span>仕事の負荷</span>
-    <span class="pct" id="workLoadPct">0% / 0%</span>
+  <div class="schedule-load-summary">
+    <div class="schedule-work-load">
+      <span>仕事の負荷</span>
+      <span class="pct" id="workLoadPct">0% / 0%</span>
+    </div>
+    <div class="schedule-work-load">
+      <span>プライベートの負荷</span>
+      <span class="pct" id="privateLoadPct">0% / 0%</span>
+    </div>
   </div>
   <div class="schedule-date-nav">
     <button class="btn btn-secondary" id="scheduleDatePrev" title="前の日">◀</button>
@@ -606,7 +650,7 @@
       ・左端の⠿を掴むとドラッグで並び替えられます（タスク一覧の並び順「カスタム」とは別に、Todo側だけの順番として覚えます）。この順番が☁️カレンダーへの登録順にそのまま使われます<br>
       ・下のタスク一覧のいちばん左のチェックは「完了」ではなく、表示中の日付にそのタスクを追加／外すためのものです（「開始日」欄とは別に管理しているので、チェックを入れても外しても「開始日」は変わりません）<br>
       ・時刻・優先度・見積もりなどの詳細は、下のタスク一覧から編集できます<br>
-      ・「仕事の負荷」は、表示中の日のタスクのうちカテゴリが「仕事」のものだけを合計した値です（上限は⚙️設定の「仕事の負荷キャパ」）<br>
+      ・「仕事の負荷」は、表示中の日のタスクのうちカテゴリが「仕事」のものだけを合計した値です（上限は⚙️設定の「仕事の負荷キャパ」）。同じく「プライベートの負荷」は、カテゴリが「プライベート」のものだけを合計した値です（上限は⚙️設定の「プライベートの負荷キャパ」）<br>
       ・📝「この日をタスクとして追加」は、表示中の日の未完了タスクを上から順にまとめてGoogleタスクとして追加します（要連携。タイトル・メモ・期限日だけが保存され、時刻や見積もり時間は保存されません）<br>
       ・🗑️「この日のTodoから外す」は、表示中の日のTodoに出ているタスクをこの日のTodoから外します（「開始日」欄やタスク一覧は変わりません。繰り返し使うタスクも再入力せずに済みます。他の日のタスクは残ります。誤操作時は下に出る「元に戻す」で復元できます）<br>
       ・タスクを右クリックすると、そのタスク1件だけをこの日のTodoから外せます（こちらもタスク一覧からは削除されず、誤操作時は下に出る「元に戻す」で復元できます）<br>
@@ -712,7 +756,12 @@
     <span class="spacer"></span>
     <span class="filters-hint" id="selectedCount"></span>
   </div>
-  <div class="filters-hint filters-note">※一覧内の項目はクリックして直接編集できます（自動保存）。優先度・負荷・見積もりはタイトル下に常に表示され、クリックしてそのまま値を選び直せます。ドラッグでの並び替えは、並び順「カスタム」選択時のみ使えます。いちばん左のチェックは「Todo」の表示中の日付にこのタスクを追加／外すためのものです（完了マークではありません）。カテゴリの右にあるタブで、その区分のタスクだけに絞り込めます（タブの名前や数は⚙️設定で自由に編集できます）。各行の「操作」列にある移動先セレクトで、タスクをほかの区分に移動できます。「📄 複製」を押すと、そのタスクのコピーをすぐ下に追加します（Todoへの追加状態は引き継がれません）。</div>
+  <details class="hint filters-note">
+    <summary>タスク一覧の見方・操作のヒント</summary>
+    <div class="hint-body">
+      ※一覧内の項目はクリックして直接編集できます（自動保存）。優先度・負荷・見積もりはタイトル下に常に表示され、クリックしてそのまま値を選び直せます。ドラッグでの並び替えは、並び順「カスタム」選択時のみ使えます。いちばん左のチェックは「Todo」の表示中の日付にこのタスクを追加／外すためのものです（完了マークではありません）。カテゴリの右にあるタブで、その区分のタスクだけに絞り込めます（タブの名前や数は⚙️設定で自由に編集できます）。各行の「操作」列にある移動先セレクトで、タスクをほかの区分に移動できます。「📄 複製」を押すと、そのタスクのコピーをすぐ下に追加します（Todoへの追加状態は引き継がれません）。
+    </div>
+  </details>
   <div class="table-scroll">
   <table>
     <colgroup>
@@ -738,9 +787,12 @@
   </div>
 
   <div id="categoriesTabPanel" style="display:none;">
-    <div class="filters-hint filters-note">
-      ※ここで登録したカテゴリだけが、タスクのカテゴリ欄で選べます。名前を変更すると、そのカテゴリを使っている全タスクにも反映されます。各カテゴリの「仕事／プライベート」ボタンで区分を切り替えられます（「仕事の負荷」の集計にはここで「仕事」にしたカテゴリだけが使われます）。
-    </div>
+    <details class="hint filters-note">
+      <summary>カテゴリ管理の見方・操作のヒント</summary>
+      <div class="hint-body">
+        ※ここで登録したカテゴリだけが、タスクのカテゴリ欄で選べます。名前を変更すると、そのカテゴリを使っている全タスクにも反映されます。各カテゴリの「仕事／プライベート」ボタンで区分を切り替えられます（「仕事の負荷」「プライベートの負荷」の集計には、それぞれここで「仕事」「プライベート」にしたカテゴリだけが使われます）。
+      </div>
+    </details>
     <div id="categoryRows"></div>
     <div class="category-add-row">
       <input type="text" id="newCategoryInput" class="text-input" placeholder="新しいカテゴリ名">
@@ -790,7 +842,7 @@ function loadData() {
   if (raw) {
     try { return JSON.parse(raw); } catch (e) { /* fallthrough */ }
   }
-  return { settings: { reminderMinutes: 10, workLoadCap: 100, theme: "system" }, tasks: [] };
+  return { settings: { reminderMinutes: 10, workLoadCap: 100, privateLoadCap: 100, theme: "dark" }, tasks: [] };
 }
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -799,7 +851,8 @@ function saveData() {
 let state = loadData();
 if (state.settings.reminderMinutes === undefined) state.settings.reminderMinutes = 10;
 if (state.settings.workLoadCap === undefined) state.settings.workLoadCap = 100;
-if (state.settings.theme === undefined) state.settings.theme = "system";
+if (state.settings.privateLoadCap === undefined) state.settings.privateLoadCap = 100;
+if (state.settings.theme === undefined) state.settings.theme = "dark";
 
 // テーマ（ライト/ダーク/システムに合わせる）をhtml要素のdata-theme属性に反映する。
 // 「システムに合わせる」の時は属性を外し、CSS側のprefers-color-schemeにそのまま任せる
@@ -989,6 +1042,7 @@ function isSameDay(a, b) {
 function syncSettingsForm() {
   document.getElementById("reminderMinutes").value = state.settings.reminderMinutes;
   document.getElementById("workLoadCap").value = state.settings.workLoadCap;
+  document.getElementById("privateLoadCap").value = state.settings.privateLoadCap;
   document.getElementById("themeSelect").value = state.settings.theme || "system";
   renderCycleGroupSettings();
 }
@@ -1119,6 +1173,12 @@ function isWorkCategory(categoryName) {
   const cat = state.categories.find(c => c.name === categoryName);
   return !!cat && (cat.type || "work") === "work"; // マスタに無いカテゴリ（削除済みなど）は対象外
 }
+// カテゴリが「プライベート」区分のタスクだけを対象に、負荷（%）を合計する（考え方はisWorkCategoryと同じ）
+function isPrivateCategory(categoryName) {
+  if (!categoryName) return false;
+  const cat = state.categories.find(c => c.name === categoryName);
+  return !!cat && cat.type === "private";
+}
 function resolveTaskLoad(task) {
   return Number(task.load) || 0;
 }
@@ -1131,6 +1191,14 @@ function renderWorkLoad() {
   const pct = cap > 0 ? Math.round((workLoad / cap) * 100) : 0;
   workLoadPctEl.textContent = `${workLoad}% / ${cap}%`;
   workLoadPctEl.style.color = pctColor(pct);
+
+  const privateLoadPctEl = document.getElementById("privateLoadPct");
+  if (!privateLoadPctEl) return;
+  const privateLoad = relevant.filter(t => isPrivateCategory(t.category)).reduce((sum, t) => sum + resolveTaskLoad(t), 0);
+  const privateCap = Number(state.settings.privateLoadCap) || 0;
+  const privatePct = privateCap > 0 ? Math.round((privateLoad / privateCap) * 100) : 0;
+  privateLoadPctEl.textContent = `${privateLoad}% / ${privateCap}%`;
+  privateLoadPctEl.style.color = pctColor(privatePct);
 }
 
 // 「開始日」(task.start, 日付のみ) と「時刻」(task.time) を組み合わせて実際の開始日時を作る。
@@ -1584,6 +1652,7 @@ document.getElementById("taskBody").addEventListener("click", (e) => {
 document.getElementById("saveSettingsBtn").addEventListener("click", () => {
   state.settings.reminderMinutes = Number(document.getElementById("reminderMinutes").value) || 0;
   state.settings.workLoadCap = Number(document.getElementById("workLoadCap").value) || 0;
+  state.settings.privateLoadCap = Number(document.getElementById("privateLoadCap").value) || 0;
   saveData();
   renderWorkLoad();
 });
@@ -1640,7 +1709,8 @@ document.getElementById("importDataInput").addEventListener("change", (e) => {
     if (!state.settings) state.settings = {};
     if (state.settings.reminderMinutes === undefined) state.settings.reminderMinutes = 10;
     if (state.settings.workLoadCap === undefined) state.settings.workLoadCap = 100;
-    if (state.settings.theme === undefined) state.settings.theme = "system";
+    if (state.settings.privateLoadCap === undefined) state.settings.privateLoadCap = 100;
+    if (state.settings.theme === undefined) state.settings.theme = "dark";
     migrateLegacyState(); // 旧形式のバックアップ（負荷/優先度が文字列、カテゴリが文字列配列）でも読み込めるようにする
 
     saveData();
