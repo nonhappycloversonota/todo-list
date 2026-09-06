@@ -885,7 +885,7 @@ function normalizeImportance5(value) {
 // 締め区分（タスク一覧の下のタブで切り替える、カテゴリとは別の分類軸）の既定値。
 // 実際の一覧は state.cycleGroups（⚙️設定で個人ごとに編集可能）に持つ。人によって使う区分が違うため、
 // 名前そのものをタスクの識別キーとして使う（カテゴリの仕組みと同じ考え方）
-const DEFAULT_CYCLE_GROUPS = ["日常業務", "20日締め", "末締め", "プライベート"];
+const DEFAULT_CYCLE_GROUPS = ["日常業務", "プライベート"];
 // 旧バージョンでは締め区分を固定のキー（daily等）で保存していたため、表示名に変換するための対応表
 const LEGACY_CYCLE_KEY_MAP = { daily: "日常業務", day20: "20日締め", endOfMonth: "末締め", private: "プライベート" };
 
