@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 防御の多層化のためのCSP。このアプリはビルド工程を持たない単一HTMLで、全JSがインラインscriptのため
+     script-srcに'unsafe-inline'が必要（インライン許可自体はXSSの根本対策にはならないが、万一の際に
+     外部ドメインからの悪意あるスクリプト読み込み・任意サイトへのデータ送信を防ぐ効果がある） -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://www.googleapis.com https://tasks.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; base-uri 'self'; object-src 'none'; form-action 'self';">
 <title>Todoリスト</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzYTZhNWIiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMWY0MDM4Ii8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iNTgiIGhlaWdodD0iNTgiIHJ4PSIxNSIgZmlsbD0idXJsKCNnKSIvPgogIDxyZWN0IHg9IjIxIiB5PSI4IiB3aWR0aD0iNS41IiBoZWlnaHQ9IjEzIiByeD0iMi43NSIgZmlsbD0iI2YxZWNlMSIvPgogIDxyZWN0IHg9IjM3LjUiIHk9IjgiIHdpZHRoPSI1LjUiIGhlaWdodD0iMTMiIHJ4PSIyLjc1IiBmaWxsPSIjZjFlY2UxIi8+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIzNSIgcj0iMTciIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2YxZWNlMSIgc3Ryb2tlLW9wYWNpdHk9IjAuMyIgc3Ryb2tlLXdpZHRoPSI2LjUiLz4KICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjM1IiByPSIxNyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjJjNDZkIiBzdHJva2Utd2lkdGg9IjYuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgc3Ryb2tlLWRhc2hhcnJheT0iODAuMSAxMDYuOCIgdHJhbnNmb3JtPSJyb3RhdGUoLTkwIDMyIDM1KSIvPgo8L3N2Zz4K">
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,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">
@@ -1461,33 +1465,33 @@ function renderTasks() {
     tr.className = taskIndex % 2 === 1 ? "task-row-alt" : "";
     tr.innerHTML = `
       <td class="drag-handle ${orderMode ? "" : "disabled"}" title="${orderMode ? "ドラッグで並び替え" : "「カスタム」並び順の時だけドラッグできます"}">⠿</td>
-      <td><input type="checkbox" class="task-select" data-id="${t.id}" ${t.todoDate === todoViewDateStr ? "checked" : ""} title="Todoの表示中の日付に追加／外す（「開始日」欄は変更されません）"></td>
+      <td><input type="checkbox" class="task-select" data-id="${escapeHtml(t.id)}" ${t.todoDate === todoViewDateStr ? "checked" : ""} title="Todoの表示中の日付に追加／外す（「開始日」欄は変更されません）"></td>
       <td class="title-cell">
         <div class="title-cell-row">
-          <input type="text" class="inline-edit" data-id="${t.id}" data-field="title" value="${escapeHtml(t.title)}">
+          <input type="text" class="inline-edit" data-id="${escapeHtml(t.id)}" data-field="title" value="${escapeHtml(t.title)}">
         </div>
         <div class="title-meta-row">
-          <select class="inline-edit category-input" data-id="${t.id}" data-field="category">${categoryOptions(t.category)}</select>
+          <select class="inline-edit category-input" data-id="${escapeHtml(t.id)}" data-field="category">${categoryOptions(t.category)}</select>
           <div class="task-meta">
-            <select class="inline-edit meta-select imp-${Number(t.importance) || 0}" data-id="${t.id}" data-field="importance" title="優先度（クリックして変更）">${importanceOptions(t.importance, "優先度")}</select>
-            <select class="inline-edit meta-select load-${pctBucket(t.load)}" data-id="${t.id}" data-field="load" title="負荷（クリックして変更）">${pctOptions(t.load, "負荷")}</select>
-            <select class="inline-edit meta-select" data-id="${t.id}" data-field="estimate" title="見積もり（クリックして変更）">${estimateOptions(t.estimate, "見積")}</select>
+            <select class="inline-edit meta-select imp-${Number(t.importance) || 0}" data-id="${escapeHtml(t.id)}" data-field="importance" title="優先度（クリックして変更）">${importanceOptions(t.importance, "優先度")}</select>
+            <select class="inline-edit meta-select load-${pctBucket(t.load)}" data-id="${escapeHtml(t.id)}" data-field="load" title="負荷（クリックして変更）">${pctOptions(t.load, "負荷")}</select>
+            <select class="inline-edit meta-select" data-id="${escapeHtml(t.id)}" data-field="estimate" title="見積もり（クリックして変更）">${estimateOptions(t.estimate, "見積")}</select>
           </div>
         </div>
       </td>
       <td class="start-cell">
         <div class="start-cell-row">
-          <input type="date" class="inline-edit" data-id="${t.id}" data-field="start" value="${escapeHtml(t.start)}">
-          <input type="time" class="inline-edit" data-id="${t.id}" data-field="time" step="900" value="${escapeHtml(t.time)}">
+          <input type="date" class="inline-edit" data-id="${escapeHtml(t.id)}" data-field="start" value="${escapeHtml(t.start)}">
+          <input type="time" class="inline-edit" data-id="${escapeHtml(t.id)}" data-field="time" step="900" value="${escapeHtml(t.time)}">
         </div>
-        <input type="date" class="inline-edit" data-id="${t.id}" data-field="deadline" value="${escapeHtml(t.deadline)}" title="終了日">
+        <input type="date" class="inline-edit" data-id="${escapeHtml(t.id)}" data-field="deadline" value="${escapeHtml(t.deadline)}" title="終了日">
       </td>
       <td>
         <div class="row-actions">
-          <select class="inline-edit" data-id="${t.id}" data-field="cycleGroup" title="移動先の区分（⚙️設定で編集できます）">${cycleOptions(t.cycleGroup)}</select>
-          <button class="btn btn-cal" data-action="cal" data-id="${t.id}" title="${isGcalConnected() ? "確認なしで直接Googleカレンダーに追加" : "Googleカレンダーに追加"}">${isGcalConnected() ? "☁️追加" : "📅追加"}</button>
-          <button class="btn btn-secondary" data-action="duplicate" data-id="${t.id}" title="このタスクをコピーして、すぐ下に新しいタスクとして追加します">📄 複製</button>
-          <button class="btn btn-danger" data-action="delete" data-id="${t.id}">削除</button>
+          <select class="inline-edit" data-id="${escapeHtml(t.id)}" data-field="cycleGroup" title="移動先の区分（⚙️設定で編集できます）">${cycleOptions(t.cycleGroup)}</select>
+          <button class="btn btn-cal" data-action="cal" data-id="${escapeHtml(t.id)}" title="${isGcalConnected() ? "確認なしで直接Googleカレンダーに追加" : "Googleカレンダーに追加"}">${isGcalConnected() ? "☁️追加" : "📅追加"}</button>
+          <button class="btn btn-secondary" data-action="duplicate" data-id="${escapeHtml(t.id)}" title="このタスクをコピーして、すぐ下に新しいタスクとして追加します">📄 複製</button>
+          <button class="btn btn-danger" data-action="delete" data-id="${escapeHtml(t.id)}">削除</button>
         </div>
       </td>
     `;
@@ -1497,8 +1501,9 @@ function renderTasks() {
   updateSelectAllCheckbox();
 }
 
+// 文字列以外（📂インポートで読み込んだ想定外の型の値など）が渡されても落ちないよう、必ず文字列化してからエスケープする
 function escapeHtml(s) {
-  return (s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 // 負荷：0〜100を10刻みの<option>群にする。prefixを渡すと各選択肢に「負荷50%」のようにラベルを付けられる
@@ -1644,7 +1649,8 @@ document.getElementById("taskBody").addEventListener("click", (e) => {
         .then(() => { btn.textContent = "✅追加済み"; setTimeout(() => renderTasks(), 1500); })
         .catch(err => { alert(err.message); btn.disabled = false; });
     } else {
-      window.open(googleCalendarUrl(task), "_blank");
+      // noopenerを付けて、開いた先のタブから元のタブ（window.opener）を操作できないようにする（reverse tabnabbing対策）
+      window.open(googleCalendarUrl(task), "_blank", "noopener,noreferrer");
     }
   }
 });
@@ -1692,7 +1698,11 @@ document.getElementById("importDataInput").addEventListener("change", (e) => {
   reader.onload = () => {
     let imported;
     try {
-      imported = JSON.parse(reader.result);
+      // __proto__ 等の危険なキーはパース時点で読み捨てる（改ざんされたバックアップによるプロトタイプ汚染対策）
+      imported = JSON.parse(reader.result, (key, value) => {
+        if (key === "__proto__" || key === "constructor" || key === "prototype") return undefined;
+        return value;
+      });
     } catch (err) {
       alert("ファイルの読み込みに失敗しました（JSON形式ではないようです）。");
       return;
@@ -1701,6 +1711,24 @@ document.getElementById("importDataInput").addEventListener("change", (e) => {
       alert("このファイルはバックアップデータの形式ではないようです。");
       return;
     }
+    // タスクの中身を想定した型に丸め込む（改ざん・破損したバックアップを読み込んでも、
+    // 一覧の描画がHTMLとして解釈されたり、型違いの値で処理が落ちたりしないようにするため）。
+    // idは他のデータや外部サービスと紐付く情報ではないため、常にこのアプリ内で振り直す
+    imported.tasks = imported.tasks
+      .filter(t => t && typeof t === "object")
+      .map(t => ({ ...t, id: uid() }));
+    // カテゴリ・締め区分のマスタも、配列でなかったり中身が壊れていれば無視する（不足分はmigrateLegacyStateが補う）
+    if (Array.isArray(imported.categories)) {
+      imported.categories = imported.categories.filter(c => typeof c === "string" || (c && typeof c === "object" && typeof c.name === "string"));
+    } else {
+      delete imported.categories;
+    }
+    if (Array.isArray(imported.cycleGroups)) {
+      imported.cycleGroups = imported.cycleGroups.filter(g => typeof g === "string" && g.trim() !== "");
+    } else {
+      delete imported.cycleGroups;
+    }
+
     const taskCount = imported.tasks.length;
     if (!confirm(`${taskCount}件のタスクを読み込みます。このURLの現在のデータは上書きされます。よろしいですか？`)) return;
 
@@ -2025,10 +2053,10 @@ function renderTodoList() {
             <span>負荷${Number(t.load) || 0}%</span>
             <span>見積${Number(t.estimate) || 0}h</span>
           </span>
-          ${isMemoOpen ? `<textarea class="inline-edit todo-memo-input" data-id="${t.id}" placeholder="メモを入力…">${escapeHtml(t.memo || "")}</textarea>` : ""}
+          ${isMemoOpen ? `<textarea class="inline-edit todo-memo-input" data-id="${escapeHtml(t.id)}" placeholder="メモを入力…">${escapeHtml(t.memo || "")}</textarea>` : ""}
         </span>
       </div>
-      <button type="button" class="todo-memo-toggle${t.memo ? " has-memo" : ""}" data-id="${t.id}" title="${isMemoOpen ? "メモを閉じる" : "メモを開く"}" aria-expanded="${isMemoOpen}">🗒️</button>
+      <button type="button" class="todo-memo-toggle${t.memo ? " has-memo" : ""}" data-id="${escapeHtml(t.id)}" title="${isMemoOpen ? "メモを閉じる" : "メモを開く"}" aria-expanded="${isMemoOpen}">🗒️</button>
     `;
     listEl.appendChild(item);
   }
