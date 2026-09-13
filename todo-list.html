@@ -106,6 +106,10 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
   * { box-sizing: border-box; }
+  /* 縦スクロールバーの表示スペースを常に確保しておく。Todoに項目を出し入れしてページの高さが変わり、
+     スクロールバーが出たり消えたりするたびに実際の横幅が数px〜十数px変動し、レイアウト切り替えの
+     境目（1100px）付近ではカラム落ち・カラム復帰まで起きて横幅が大きく変わって見えていたのを防ぐ */
+  html { overflow-y: scroll; scrollbar-gutter: stable; }
   body {
     margin: 0;
     font-family: var(--font-body);
@@ -133,7 +137,8 @@
   th, .gantt2-day, .hour-label, td.num { font-variant-numeric: tabular-nums; }
   /* スケジュール（左）とタスク管理（右：追加フォーム＋一覧）を横並びにし、上下スクロールの往復をなくす */
   .schedule-list-row { display: flex; align-items: flex-start; gap: var(--space-5); margin-bottom: var(--space-6); }
-  .schedule-list-row .schedule-card { flex: 0 0 340px; margin-bottom: 0; position: sticky; top: var(--space-5); }
+  /* 時刻・優先度・負荷・見積・実績のバッジがフル装備でも横スクロールなしで1行に収まる幅にしておく */
+  .schedule-list-row .schedule-card { flex: 0 0 540px; margin-bottom: 0; position: sticky; top: var(--space-5); }
   .schedule-list-row .list-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-6); }
   .schedule-list-row .list-col > .card { margin-bottom: 0; }
   .gantt-card { margin-bottom: var(--space-6); }
@@ -354,6 +359,12 @@
   }
   /* カテゴリ名は長さが可変なので、はみ出す分は省略する */
   .title-cell .category-input { margin-top: 0; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 優先度・負荷・見積もりは選ぶ値によって文字数が変わる（例：「負荷5%」→「負荷100%」）ため、
+     幅を中身に合わせて伸縮させると選ぶたびに横幅がガタつく。それぞれ最大表示（優先度5・負荷100%・見積7.75h）
+     に合わせた最小幅を固定し、選び直しても横幅が変わらないようにする */
+  .title-cell .task-meta select.meta-select[data-field="importance"] { min-width: 60px; text-align: center; }
+  .title-cell .task-meta select.meta-select[data-field="load"] { min-width: 68px; text-align: center; }
+  .title-cell .task-meta select.meta-select[data-field="estimate"] { min-width: 78px; text-align: center; }
   .title-cell .category-input:hover,
   .title-cell .task-meta select.meta-select:hover { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
   .title-cell .task-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
@@ -389,6 +400,25 @@
     display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85rem;
   }
   .schedule-work-load .pct { font-weight: 700; font-size: 0.95rem; letter-spacing: -.01em; }
+  /* 負荷ゲージ＋「顔」。--sick（0〜100、JS側で負荷%から設定）をもとに、健康色(--ok)から危険色(--danger)へ
+     CSSのcolor-mix()で連続的に色を混ぜる。テーマ(ライト/ダーク)のトークンをそのまま使うので、
+     テーマが変わっても常に自然な色になる（古いブラウザでcolor-mix未対応の場合は--okの単色にフォールバック） */
+  .load-gauge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; --sick: 0; }
+  .load-face { flex-shrink: 0; width: 22px; height: 20px; line-height: 0; }
+  .load-face svg { width: 100%; height: 100%; display: block; }
+  .load-face-head {
+    fill: var(--ok);
+    fill: color-mix(in srgb, var(--danger) calc(var(--sick) * 1%), var(--ok));
+  }
+  .load-gauge-track {
+    flex: 1; height: 7px; border-radius: 999px; background: var(--chip-bg); overflow: hidden;
+  }
+  .load-gauge-fill {
+    display: block; height: 100%; border-radius: inherit; width: 0%;
+    background: var(--ok);
+    background: color-mix(in srgb, var(--danger) calc(var(--sick) * 1%), var(--ok));
+    transition: width .2s ease;
+  }
   /* 下の2段ボタン（幅100%）と横幅が揃うよう、日付欄を伸ばして行全体を埋める */
   .schedule-date-nav { display: flex; align-items: center; gap: 6px; margin-bottom: var(--space-4); flex-wrap: wrap; }
   .schedule-date-nav .btn { padding: 7px 12px; font-size: 0.8rem; flex: 0 0 auto; }
@@ -396,7 +426,7 @@
   .schedule-actions { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-4); }
   .schedule-actions .btn { padding: 7px 12px; font-size: 0.8rem; width: 100%; }
   .schedule-date-nav input[type="date"] {
-    flex: 1 1 0; min-width: 0;
+    flex: 1 1 0; min-width: 0; text-align: center;
     padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius-control);
     background: var(--bg); color: var(--text); font-size: 0.82rem;
   }
@@ -417,7 +447,8 @@
   .todo-list::-webkit-scrollbar-track { background: var(--chip-bg); }
   .todo-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 999px; border: 2px solid var(--chip-bg); }
   .todo-item {
-    display: flex; align-items: flex-start; gap: 6px; padding: 10px 12px;
+    position: relative; /* 完了時に浮かせる「+XP」表示(.xp-float)の基準位置にする */
+    display: flex; align-items: flex-start; gap: 6px; padding: 10px 12px; min-width: 0;
     border: 1px solid var(--border); border-left: 4px solid var(--text-sub);
     border-radius: var(--radius-block); background: var(--card-alt);
     transition: background-color .15s ease;
@@ -433,7 +464,7 @@
   .todo-title { font-weight: 700; font-size: 0.92rem; word-break: break-word; }
   /* 優先度・負荷・見積もりなどのバッジは折り返さず必ず1行にまとめる。入りきらない時は横スクロールで見せる（バーは非表示） */
   .todo-meta {
-    display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;
+    display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; min-width: 0;
     scrollbar-width: none; -ms-overflow-style: none;
   }
   .todo-meta::-webkit-scrollbar { display: none; }
@@ -458,6 +489,151 @@
   }
   .todo-item.todo-done { opacity: .55; }
   .todo-item.todo-done .todo-title { text-decoration: line-through; }
+  /* 完了トグル（✅／⬜）。一番左のチェック（Todoに出す/外す）とは別物で、あくまで「やり切ったか」を表す */
+  .todo-done-toggle {
+    flex-shrink: 0; align-self: flex-start; width: 24px; height: 24px; margin-top: 1px; padding: 0;
+    border: none; background: none; cursor: pointer; font-size: 1rem; line-height: 1; border-radius: 5px;
+    opacity: .55; transition: opacity .15s ease, background-color .15s ease;
+  }
+  .todo-done-toggle:hover { opacity: .9; background: var(--chip-bg); }
+  .todo-done-toggle.is-done { opacity: 1; }
+  /* 実績時間の記録ボタン（⏱）。絵文字は色をOS任せにできずダークモードの暗い背景に沈んで見えにくかったため、
+     色を指定できるSVGアイコンに変更（currentColorでテーマに合わせた白系〜グレーの色にする） */
+  .todo-actual-toggle {
+    flex-shrink: 0; align-self: flex-start; width: 24px; height: 24px; margin-top: 1px; padding: 0;
+    border: none; background: none; cursor: pointer; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-sub); opacity: .7;
+    transition: opacity .15s ease, background-color .15s ease, color .15s ease;
+  }
+  .todo-actual-toggle svg { width: 14px; height: 14px; }
+  .todo-actual-toggle:hover { opacity: 1; background: var(--chip-bg); }
+  .todo-actual-toggle.has-actual { opacity: 1; color: var(--accent-strong); }
+  .todo-actual-input { margin-top: 2px; max-width: 140px; }
+  /* 見積もりと実績のズレを色で示す（大きく超過するほど強い色に） */
+  .todo-meta span.diff-ok { color: var(--ok); }
+  .todo-meta span.diff-warn { color: var(--warn); background: var(--warn-soft); border-color: var(--warn); }
+  .todo-meta span.diff-over { color: var(--danger); background: var(--danger-soft); border-color: var(--danger); }
+  .todo-bias-hint { color: var(--text-sub); font-size: 0.76rem; margin: -4px 0 var(--space-3); }
+
+  /* ===== 🎮 ゲーミフィケーション（レベル・ストリーク・実績バッジ・完了演出） =====
+     一覧の見やすさが主役であることを崩さないよう、常設の表示は「Lv.表示＋XPバー＋🔥ストリーク＋実績ボタン」の
+     控えめな1行のみに留め、派手な演出（完了時のアニメーション・レベルアップ通知）は「起きた瞬間だけ」出す */
+  .game-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -4px 0 var(--space-6); }
+  .game-level-badge {
+    flex-shrink: 0; display: flex; align-items: center; gap: 4px;
+    font-size: 0.78rem; font-weight: 700; color: var(--accent-strong);
+    background: var(--accent-soft); border: 1px solid var(--accent);
+    padding: 4px 11px; border-radius: 999px; white-space: nowrap;
+  }
+  .game-level-badge.level-pop { animation: gameLevelPop .5s ease; }
+  @keyframes gameLevelPop { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); } }
+  .game-xp-track {
+    flex: 1 1 110px; min-width: 70px; max-width: 220px; height: 7px; border-radius: 999px;
+    background: var(--chip-bg); overflow: hidden;
+  }
+  .game-xp-fill { display: block; height: 100%; border-radius: inherit; width: 0%; background: var(--accent); transition: width .3s ease; }
+  /* 🔥ストリーク：連続日数が増えるほど--heatが上がり、色を--warnから--danger寄りへ連続的に混ぜる（顔ゲージと同じ考え方）。
+     0日の間は色を付けず、頑張った日にだけ色が付く演出にする */
+  .game-streak {
+    flex-shrink: 0; display: flex; align-items: center; gap: 5px;
+    font-size: 0.78rem; font-weight: 700; color: var(--text-sub);
+    background: var(--chip-bg); padding: 4px 11px; border-radius: 999px; --heat: 0;
+  }
+  .game-streak.is-active { color: var(--warn); }
+  .game-streak-icon { flex-shrink: 0; width: 15px; height: 15px; line-height: 0; }
+  .game-streak-icon svg { width: 100%; height: 100%; display: block; }
+  .game-streak-icon .flame-shape { fill: var(--text-sub); opacity: .45; }
+  .game-streak.is-active .flame-shape {
+    opacity: 1;
+    fill: var(--warn);
+    fill: color-mix(in srgb, var(--danger) calc(var(--heat) * 1%), var(--warn));
+  }
+  .game-badges-btn {
+    flex-shrink: 0; display: flex; align-items: center; gap: 5px;
+    font-size: 0.78rem; font-weight: 700; color: var(--text-sub);
+    background: var(--chip-bg); border: 1px solid var(--border);
+    padding: 4px 11px; border-radius: 999px; cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .game-badges-btn:hover { color: var(--text); border-color: var(--accent); }
+  /* 完了トグルを押した瞬間だけの演出：ボタンが少し弾み、「+◯ XP」が浮かんで消える */
+  .todo-done-toggle.celebrate { animation: gameDoneCelebrate .45s ease; }
+  @keyframes gameDoneCelebrate {
+    0% { transform: scale(1) rotate(0); }
+    35% { transform: scale(1.35) rotate(-10deg); }
+    65% { transform: scale(1.35) rotate(8deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+  .xp-float {
+    position: absolute; right: 10px; top: 6px; font-size: 0.72rem; font-weight: 700;
+    color: var(--ok); pointer-events: none; animation: gameXpFloat 1.1s ease forwards;
+  }
+  @keyframes gameXpFloat {
+    0% { opacity: 0; transform: translateY(6px); }
+    15% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-20px); }
+  }
+  /* レベルアップ・実績解除を知らせる控えめなトースト（画面上部・数秒で自動的に消える） */
+  .game-toast {
+    position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px;
+    background: var(--accent); color: #f5f9ff;
+    padding: 10px 18px; border-radius: var(--radius-panel);
+    box-shadow: var(--shadow); font-size: 0.86rem; font-weight: 700; z-index: 110;
+    max-width: calc(100vw - 32px); animation: gameToastIn .25s ease;
+  }
+  @keyframes gameToastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  /* 表示中の日のタスクを全て完了させた時だけ出す達成バナー */
+  .todo-day-complete { display: flex; align-items: center; gap: 6px; color: var(--ok); font-size: 0.8rem; font-weight: 700; margin: -4px 0 var(--space-3); }
+  /* ⚙️設定内「🏆 実績」：未解除もグレーで並べ、目標として見えるようにする（達成済みは強調表示） */
+  .badge-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge-chip {
+    display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+    background: var(--chip-bg); border: 1px solid var(--border); font-size: 0.76rem; color: var(--text-sub);
+    opacity: .55;
+  }
+  .badge-chip.unlocked { opacity: 1; background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent); font-weight: 700; }
+  /* 演出をうるさく感じる人向けに、OS側の「視差効果を減らす」設定を尊重して長めのアニメーションは省略する */
+  @media (prefers-reduced-motion: reduce) {
+    .todo-done-toggle.celebrate, .game-level-badge.level-pop, .xp-float, .game-toast { animation: none !important; }
+  }
+
+  /* ===== タイムボックス（表示中の日、時間軸での可視化） ===== */
+  .timebox-card { margin-bottom: var(--space-6); }
+  .timebox-outer {
+    display: flex; border: 1px solid var(--border); border-radius: var(--radius-panel); overflow: hidden;
+    max-height: 460px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--accent) var(--chip-bg);
+  }
+  .timebox-outer::-webkit-scrollbar { width: 10px; }
+  .timebox-outer::-webkit-scrollbar-track { background: var(--chip-bg); }
+  .timebox-outer::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 999px; border: 2px solid var(--chip-bg); }
+  .timebox-hours { flex: 0 0 52px; position: relative; background: var(--card-alt); border-right: 1px solid var(--border); }
+  .timebox-hour-label {
+    position: absolute; left: 0; right: 0; font-size: 0.68rem; color: var(--text-sub);
+    padding: 2px 6px; box-sizing: border-box;
+  }
+  .timebox-main { flex: 1; min-width: 0; position: relative; }
+  .timebox-gridline { position: absolute; left: 0; right: 0; border-top: 1px solid var(--border); }
+  .timebox-now-line { position: absolute; left: 0; right: 0; border-top: 2px solid var(--accent); z-index: 4; }
+  .timebox-block {
+    position: absolute; box-sizing: border-box; border-radius: var(--radius-block); padding: 2px 8px;
+    font-size: 0.76rem; font-weight: 700; overflow: hidden; border-left: 4px solid var(--text-sub);
+    box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: center; gap: 1px;
+    transition: transform .1s ease, box-shadow .15s ease;
+    min-height: 20px; /* 短い予定（15分など）でも高さ換算で数pxになって文字が消えないよう、タイトル1行ぶんは必ず確保する */
+  }
+  .timebox-block:hover { transform: translateY(-1px); box-shadow: var(--shadow); z-index: 3; }
+  .timebox-block .tb-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .timebox-block .tb-time { font-size: 0.66rem; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .timebox-block.imp-high { background: var(--danger-soft); border-left-color: var(--danger); color: var(--danger); }
+  .timebox-block.imp-mid { background: var(--warn-soft); border-left-color: var(--warn); color: var(--warn); }
+  .timebox-block.imp-low { background: var(--chip-bg); border-left-color: var(--text-sub); color: var(--text-sub); }
+  .timebox-block.tb-done { opacity: .5; text-decoration: line-through; }
 
   /* ===== ガントチャート（横・複数日） ===== */
   .gantt2-outer {
@@ -541,6 +717,16 @@
 </div>
 <div class="sub">データはこの端末のブラウザ内だけに保存されます（外部送信なし）</div>
 
+<div class="game-bar" id="gameBar">
+  <span class="game-level-badge" id="gameLevelBadge" title="レベル：タスクを完了して貯めたXPで上がります">Lv.1</span>
+  <span class="game-xp-track" title="次のレベルまでの経験値"><span class="game-xp-fill" id="gameXpFill"></span></span>
+  <span class="game-streak" id="gameStreak" title="連続でタスクを完了した日数（1日1件以上の完了でカウントされます）">
+    <span class="game-streak-icon" id="gameStreakIcon"></span>
+    <span id="gameStreakCount">0日</span>
+  </span>
+  <button type="button" class="game-badges-btn" id="gameBadgesBtn" title="実績一覧を見る">🏆 <span id="gameBadgeCount">0/0</span></button>
+</div>
+
 <div class="card card-secondary" id="settingsPanel" style="display:none;">
   <h2>⚙️ 設定</h2>
 
@@ -568,6 +754,11 @@
       <input type="number" id="privateLoadCap" min="0" step="10">
       <span>%</span>
     </div>
+  </div>
+
+  <div class="settings-section" id="badgeSection">
+    <div class="settings-section-title">🏆 実績</div>
+    <div class="badge-grid" id="badgeList"></div>
   </div>
 
   <div class="settings-section">
@@ -615,6 +806,7 @@
       ・「タスク一覧下のタブ」は、タスク一覧の下にある区分タブ（既定は「日常業務」など）の名前・数を編集できます。この設定はこの端末・このブラウザだけのものなので、アプリを共有していても他の人には影響しません。タブは最低1つ必要です（削除すると、そのタブのタスクは残ったタブに移動します）<br>
       ・通知は、連携済みでGoogleカレンダーの「予定」として直接追加した時だけ反映されます（Googleタスクへの追加には通知の概念がありません）<br>
       ・時刻が未入力のタスクをカレンダーに追加すると、時間を自動で割り振らず「終日」の予定として登録されます<br>
+      ・逆に時刻はあるが開始日が未入力のタスクをカレンダーに追加すると、開始日は登録した日（今日）が使われます<br>
       ・データはURL（file:///…とhttp://localhost:…など）ごとに別々に保存されます。別のURLに移したい時は、元のURLで💾エクスポートしてファイルを保存し、移した先のURLで📂インポートしてください
     </div>
   </details>
@@ -626,15 +818,25 @@
     <h2>✅ Todoリスト</h2>
   </div>
   <div class="schedule-load-summary">
+    <div class="load-gauge-row" id="workLoadGaugeRow">
+      <span class="load-face" id="workLoadFace"></span>
+      <span class="load-gauge-track"><span class="load-gauge-fill" id="workLoadGaugeFill"></span></span>
+    </div>
     <div class="schedule-work-load">
       <span>仕事の負荷</span>
       <span class="pct" id="workLoadPct">0% / 0%</span>
+    </div>
+    <div class="load-gauge-row" id="privateLoadGaugeRow">
+      <span class="load-face" id="privateLoadFace"></span>
+      <span class="load-gauge-track"><span class="load-gauge-fill" id="privateLoadGaugeFill"></span></span>
     </div>
     <div class="schedule-work-load">
       <span>プライベートの負荷</span>
       <span class="pct" id="privateLoadPct">0% / 0%</span>
     </div>
   </div>
+  <div class="todo-bias-hint" id="todoBiasHint" style="display:none;"></div>
+  <div class="todo-day-complete" id="todoDayComplete" style="display:none;">🎉 この日のタスクを全部やり切りました！</div>
   <div class="schedule-date-nav">
     <button class="btn btn-secondary" id="scheduleDatePrev" title="前の日">◀</button>
     <input type="date" id="scheduleDateInput">
@@ -658,7 +860,9 @@
       ・📝「この日をタスクとして追加」は、表示中の日の未完了タスクを上から順にまとめてGoogleタスクとして追加します（要連携。タイトル・メモ・期限日だけが保存され、時刻や見積もり時間は保存されません）<br>
       ・🗑️「この日のTodoから外す」は、表示中の日のTodoに出ているタスクをこの日のTodoから外します（「開始日」欄やタスク一覧は変わりません。繰り返し使うタスクも再入力せずに済みます。他の日のタスクは残ります。誤操作時は下に出る「元に戻す」で復元できます）<br>
       ・タスクを右クリックすると、そのタスク1件だけをこの日のTodoから外せます（こちらもタスク一覧からは削除されず、誤操作時は下に出る「元に戻す」で復元できます）<br>
-      ・各タスク右端の🗒️を押すと、そのタスクだけのメモ欄が開きます（内容はタスクごとに保存され、書きかけの内容は他の操作を挟んでも保持されます。メモが入力済みのタスクは🗒️がはっきり表示されます）
+      ・各タスク右端の🗒️を押すと、そのタスクだけのメモ欄が開きます（内容はタスクごとに保存され、書きかけの内容は他の操作を挟んでも保持されます。メモが入力済みのタスクは🗒️がはっきり表示されます）<br>
+      ・左端の⠿の右にある✅／⬜は「完了」を表すマークです（一番左のチェックとは別物です）。完了にすると一覧で薄く・取り消し線付きで表示され、📊ガントチャートにも反映されます<br>
+      ・⏱を押すと「実績時間」を記録できます（見積もりとの差が「実績◯h(+◯h)」のように表示されます）。何件か記録が貯まると、見積もりの下に「見積もりのクセ」として平均のズレが表示され、自分が時間をどれくらい見誤りやすいかの目安になります
     </div>
   </details>
 </div>
@@ -807,6 +1011,21 @@
 </div>
 </div>
 
+<div class="card timebox-card">
+  <h2>🧱 今日のタイムボックス</h2>
+  <div class="timebox-outer">
+    <div class="timebox-hours" id="timeboxHours"></div>
+    <div class="timebox-main" id="timeboxMain"></div>
+  </div>
+  <div class="empty" id="timeboxEmpty" style="display:none;">時刻が設定されているタスクがありません。</div>
+  <details class="hint">
+    <summary>タイムボックスの見方</summary>
+    <div class="hint-body">
+      表示中の日のTodoのうち、時刻が設定されているタスクだけを、時間の枠（ブロック）として並べて表示します。見積もり時間ぶんの高さで描画され、時間が重なるタスクは横に並びます。予定を「なんとなくの一日」ではなく具体的な時間の塊として目に入るようにし、時間の見積もり・確保（タイムボクシング）を助けるための表示です。今日を表示中は、現在時刻の位置に横線が入ります。
+    </div>
+  </details>
+</div>
+
 <div class="card gantt-card">
   <h2>📊 ガントチャート</h2>
   <div class="gantt2-outer">
@@ -838,6 +1057,10 @@
   <button class="btn btn-secondary" id="undoToastBtn">元に戻す</button>
 </div>
 
+<div class="game-toast" id="gameToast" style="display:none;">
+  <span id="gameToastMsg"></span>
+</div>
+
 <script>
 const STORAGE_KEY = "workCapacityApp_v1";
 
@@ -853,10 +1076,22 @@ function saveData() {
 }
 
 let state = loadData();
+// localStorageの中身が壊れていてsettings自体が無い/nullな場合に備えるガード（📂インポート側と同じ考え方）
+if (!state.settings) state.settings = {};
 if (state.settings.reminderMinutes === undefined) state.settings.reminderMinutes = 10;
 if (state.settings.workLoadCap === undefined) state.settings.workLoadCap = 100;
 if (state.settings.privateLoadCap === undefined) state.settings.privateLoadCap = 100;
 if (state.settings.theme === undefined) state.settings.theme = "dark";
+// 🎮 ゲーミフィケーション（XP・レベル・連続達成日数・実績バッジ）のデータ。旧バージョンのデータには
+// 無いフィールドなので、無ければ初期値を用意する（📂インポートで旧バックアップを読み込んだ時にも
+// 同じガードが必要なため、migrateLegacyState()側にも同内容を用意している）
+if (!state.gamification) state.gamification = {};
+if (state.gamification.xp === undefined) state.gamification.xp = 0;
+if (state.gamification.totalDone === undefined) state.gamification.totalDone = 0;
+if (state.gamification.streakCurrent === undefined) state.gamification.streakCurrent = 0;
+if (state.gamification.streakBest === undefined) state.gamification.streakBest = 0;
+if (state.gamification.lastActiveDate === undefined) state.gamification.lastActiveDate = "";
+if (!Array.isArray(state.gamification.badges)) state.gamification.badges = [];
 
 // テーマ（ライト/ダーク/システムに合わせる）をhtml要素のdata-theme属性に反映する。
 // 「システムに合わせる」の時は属性を外し、CSS側のprefers-color-schemeにそのまま任せる
@@ -881,10 +1116,26 @@ function normalizePct(value, legacyMap) {
 const LEGACY_IMPORTANCE_MAP = { high: 5, mid: 3, low: 1 };
 function normalizeImportance5(value) {
   if (typeof value === "string" && LEGACY_IMPORTANCE_MAP[value] !== undefined) return LEGACY_IMPORTANCE_MAP[value];
+  // null（キーはあるが値が空）とundefined（キー自体が無い）は、どちらも「未設定」として同じ既定値にする。
+  // Number(null)は0扱いになってしまい、下のn===0分岐で最低優先度に化けてしまうため、先にここで弾く
+  if (value === null || value === undefined) return 3;
   const n = Number(value);
   if (isNaN(n)) return 3;
-  if (n > 5 || n === 0) return Math.max(1, Math.min(5, Math.round(n / 20) || 1)); // 0〜100%の値だったとみなす
-  return Math.max(1, Math.min(5, Math.round(n)));
+  if (n >= 1 && n <= 5) return Math.round(n);
+  if (n === 0) return 1; // 0%（最低）
+  if (n >= 20 && n <= 100) return Math.max(1, Math.min(5, Math.round(n / 20))); // 旧0〜100%の値だったとみなす
+  // 1〜5にも旧0〜100%（20刻み想定）にも当てはまらない壊れた値。
+  // 6〜19のような中途半端な値をそのまま/20してしまうと最低優先度に化けて直感に反するため、
+  // 破損データによる意図しない優先度低下を避け、見落とされにくい最大側に倒しておく
+  return 5;
+}
+// 見積もり時間は一覧のセレクト（estimateOptions）と同じ0.25〜8時間にクランプし、
+// 非数値・0以下は既定値(0.25h)にする（範囲外だとセレクトでどれも選択されない状態になり、
+// 一覧の表示とTodoリストの表示（見積○h）とで不整合が起きるため）
+function normalizeEstimate(value) {
+  const n = Number(value);
+  if (isNaN(n) || n <= 0) return 0.25;
+  return Math.max(0.25, Math.min(8, n));
 }
 // 締め区分（タスク一覧の下のタブで切り替える、カテゴリとは別の分類軸）の既定値。
 // 実際の一覧は state.cycleGroups（⚙️設定で個人ごとに編集可能）に持つ。人によって使う区分が違うため、
@@ -893,18 +1144,48 @@ const DEFAULT_CYCLE_GROUPS = ["日常業務", "プライベート"];
 // 旧バージョンでは締め区分を固定のキー（daily等）で保存していたため、表示名に変換するための対応表
 const LEGACY_CYCLE_KEY_MAP = { daily: "日常業務", day20: "20日締め", endOfMonth: "末締め", private: "プライベート" };
 
+// 名前の配列に重複があれば、2件目以降の末尾に連番を振って一意にする（📂インポートで同名のタブ／
+// カテゴリが重複したデータが混ざっていると、削除・改名処理が名前で対象を探すため同名の全件・
+// 意図しない1件目に効いてしまう。通常のUI操作では重複自体作れない想定だが、インポート時の安全策として入れる）
+function dedupeNames(names) {
+  const used = new Set();
+  return names.map(name => {
+    let candidate = name;
+    let n = 2;
+    // 生成した連番名が、たまたま元の並びに既にある名前（例："A"が重複する一方で"A(2)"も別途存在する場合）
+    // と衝突しないよう、使われていない名前が見つかるまで連番を進める
+    while (used.has(candidate)) {
+      candidate = `${name}(${n})`;
+      n++;
+    }
+    used.add(candidate);
+    return candidate;
+  });
+}
+
 // 旧形式のデータ（負荷/優先度が文字列、カテゴリが自由入力の文字列配列など）を現在の形式に変換する。
 // ページ読み込み直後だけでなく、📂インポートで別のバックアップを丸ごと読み込んだ時にも
 // 同じ変換が必要なため関数にしている（インポート側で呼び忘れると、旧形式のバックアップを
 // 読み込んだ時だけ負荷・優先度が0扱いになったり、カテゴリの仕事/プライベート切り替えが壊れたりする）
 function migrateLegacyState() {
+  // 🎮 ゲーミフィケーションのデータも、📂インポートで旧バックアップ（このフィールド自体が無い）を
+  // 読み込んだ時に備えて同じガードをここでも行う（読み込み直後の初期化と同じ内容）
+  if (!state.gamification) state.gamification = {};
+  if (state.gamification.xp === undefined) state.gamification.xp = 0;
+  if (state.gamification.totalDone === undefined) state.gamification.totalDone = 0;
+  if (state.gamification.streakCurrent === undefined) state.gamification.streakCurrent = 0;
+  if (state.gamification.streakBest === undefined) state.gamification.streakBest = 0;
+  if (state.gamification.lastActiveDate === undefined) state.gamification.lastActiveDate = "";
+  if (!Array.isArray(state.gamification.badges)) state.gamification.badges = [];
   // 締め区分のマスタ一覧。無ければ既定の4つを用意する（⚙️設定で自由に追加・改名・削除できる）
   if (!Array.isArray(state.cycleGroups) || state.cycleGroups.length === 0) {
     state.cycleGroups = DEFAULT_CYCLE_GROUPS.slice();
   }
+  state.cycleGroups = dedupeNames(state.cycleGroups);
   state.tasks.forEach((t, index) => {
     t.importance = normalizeImportance5(t.importance);
     t.load = normalizePct(t.load, LEGACY_LOAD_MAP);
+    t.estimate = normalizeEstimate(t.estimate);
     // 以前は「開始日」＝「Todoに出す日」だったため、チェックを入れると開始日が上書きされたり、
     // 開始日を消すとTodoから消えたりして紛らわしかった。両者を分離するため、
     // Todo表示用の日付は別フィールド(todoDate)に持たせる（無ければ今までの開始日をそのまま引き継ぐ）
@@ -926,6 +1207,8 @@ function migrateLegacyState() {
     // 文字列配列だった旧データを{name, type}に変換する
     state.categories = state.categories.map(c => typeof c === "string" ? { name: c, type: "work" } : c);
   }
+  // カテゴリ名の重複も締め区分と同じ理由で解消しておく
+  dedupeNames(state.categories.map(c => c.name)).forEach((name, i) => { state.categories[i].name = name; });
   // 以前の「時間軸スケジュール」機能で📥ペーストして増やしたタスク（scheduleOnly: true）は、
   // タスク一覧にも出ずスケジュール表示専用の存在だったが、Todo方式への移行でその表示自体を廃止したため、
   // 行き場のない残骸として残ってしまう。編集・削除する手段が無くなるため、読み込み時に取り除いておく
@@ -936,6 +1219,8 @@ let draggedId = null;
 let activeCycleTab = state.cycleGroups[0]; // タスク一覧の下のタブで選んでいる締め区分（既定は一覧の先頭）
 let scheduleViewDate = new Date(); // 「Todo」で表示中の日付（日付ナビで切り替える。既定は今日）
 let openMemoIds = new Set(); // Todoリストでメモ欄を開いているタスクのid（日をまたいで見ても閉じたままにするため再描画のたびに保持する）
+let openActualIds = new Set(); // Todoリストで実績時間欄を開いているタスクのid（考え方はopenMemoIdsと同じ）
+const TIMEBOX_HOUR_HEIGHT = 32; // タイムボックスの1時間あたりの高さ(px)
 let pendingUndo = null; // { undo: fn } 直前の操作を取り消す処理（「元に戻す」トースト用）
 let undoToastTimer = null;
 
@@ -976,7 +1261,8 @@ function deleteTaskWithUndo(task) {
 function duplicateTask(task) {
   const index = state.tasks.findIndex(t => t.id === task.id);
   if (index === -1) return;
-  const copy = { ...task, id: uid(), title: `${task.title}のコピー`, todoDate: "", todoOrder: nextTodoOrder() };
+  // 複製は「新しいタスク」として扱うため、完了状態・実績時間は引き継がない（見積もりや優先度などはそのまま引き継ぐ）
+  const copy = { ...task, id: uid(), title: `${task.title}のコピー`, todoDate: "", todoOrder: nextTodoOrder(), status: "not_started", actual: undefined };
   state.tasks.splice(index + 1, 0, copy);
   saveData();
   renderAll();
@@ -986,11 +1272,14 @@ function duplicateTask(task) {
 // 「開始日」欄には触れない。🗑️「この日のTodoから外す」と同じ考え方（繰り返し使うタスクを毎回入力し直さずに済むように）。
 function removeFromTodoWithUndo(task) {
   const prevTodoDate = task.todoDate;
+  const prevActual = task.actual;
   task.todoDate = "";
+  task.actual = undefined; // チェックを外す（.task-select）時と同じく、その日のTodoから外すタイミングで実績記録もリセットする
   saveData();
   renderAll();
   showUndoToast(`「${task.title}」をこの日のTodoから外しました`, () => {
     task.todoDate = prevTodoDate;
+    task.actual = prevActual; // 元に戻す時は、消した実績記録も一緒に復元する
     saveData();
     renderAll();
   });
@@ -1186,23 +1475,78 @@ function isPrivateCategory(categoryName) {
 function resolveTaskLoad(task) {
   return Number(task.load) || 0;
 }
+// 負荷ゲージに添える「顔」のSVGを作る。0%に近いほど元気な表情、100%に近づくほど辛そうな表情に変える。
+// 顔色自体はCSS側のcolor-mix()で連続的に変えるので（updateLoadGaugeが--sickを設定する）、
+// ここでは目・口の形だけを負荷の段階（4段階）に応じて切り替える
+function loadFaceSvg(pct) {
+  const p = Math.max(0, pct);
+  let mouth, eyes, extra = "";
+  if (p < 60) { // 元気
+    mouth = `<path d="M8 14 Q12 18 16 14" fill="none" stroke-width="1.4" stroke-linecap="round"/>`;
+    eyes = `<circle cx="9" cy="10" r="1.2"/><circle cx="15" cy="10" r="1.2"/>`;
+  } else if (p < 85) { // ふつう
+    mouth = `<path d="M8 15 L16 15" stroke-width="1.4" stroke-linecap="round"/>`;
+    eyes = `<circle cx="9" cy="10" r="1.2"/><circle cx="15" cy="10" r="1.2"/>`;
+  } else if (p < 100) { // しんどい（軽く汗）
+    mouth = `<path d="M8 17.5 Q12 13.5 16 17.5" fill="none" stroke-width="1.4" stroke-linecap="round"/>`;
+    eyes = `<circle cx="9" cy="10" r="1.2"/><circle cx="15" cy="10" r="1.2"/>`;
+    extra = `<path d="M18.5 5 q1.6 2.2 0 4.4" fill="none" stroke-width="1" stroke-linecap="round" opacity=".8"/>`;
+  } else { // 限界（×目・波打つ口・大きめの汗）
+    mouth = `<path d="M7.5 16 q1.5 -2.2 3 0 q1.5 -2.2 3 0 q1.5 -2.2 3 0" fill="none" stroke-width="1.3" stroke-linecap="round"/>`;
+    eyes = `<path d="M7.3 8.8 L10.3 11.3 M10.3 8.8 L7.3 11.3" stroke-width="1.2" stroke-linecap="round"/><path d="M13.7 8.8 L16.7 11.3 M16.7 8.8 L13.7 11.3" stroke-width="1.2" stroke-linecap="round"/>`;
+    extra = `<path d="M18.5 4.5 q2 2.6 0 5.2" fill="none" stroke-width="1.1" stroke-linecap="round"/>`;
+  }
+  return `<svg viewBox="0 0 24 22" aria-hidden="true">
+    <circle class="load-face-head" cx="12" cy="11" r="9.3"></circle>
+    <g fill="var(--card)" stroke="var(--card)">${eyes}${mouth}</g>
+    <g fill="none" stroke="var(--card)">${extra}</g>
+  </svg>`;
+}
+// 負荷ゲージ（バー＋顔）を1件ぶん更新する。上限未設定（hasCap=false）の時はゲージを空・顔をニュートラルにする
+function updateLoadGauge(prefix, pct, hasCap) {
+  const row = document.getElementById(`${prefix}LoadGaugeRow`);
+  const fill = document.getElementById(`${prefix}LoadGaugeFill`);
+  const face = document.getElementById(`${prefix}LoadFace`);
+  if (!row || !fill || !face) return;
+  const shownPct = hasCap ? Math.max(0, pct) : 0;
+  const sick = Math.max(0, Math.min(100, shownPct)); // 顔色・ゲージ色を「健康色→危険色」で混ぜる割合（0〜100）
+  row.style.setProperty("--sick", sick);
+  fill.style.width = `${Math.min(100, shownPct)}%`;
+  face.innerHTML = loadFaceSvg(shownPct);
+}
 function renderWorkLoad() {
   const workLoadPctEl = document.getElementById("workLoadPct");
   if (!workLoadPctEl) return;
   const relevant = getTodayTasksForSchedule(scheduleViewDate);
   const workLoad = relevant.filter(t => isWorkCategory(t.category)).reduce((sum, t) => sum + resolveTaskLoad(t), 0);
   const cap = Number(state.settings.workLoadCap) || 0;
-  const pct = cap > 0 ? Math.round((workLoad / cap) * 100) : 0;
-  workLoadPctEl.textContent = `${workLoad}% / ${cap}%`;
-  workLoadPctEl.style.color = pctColor(pct);
+  if (cap > 0) {
+    const pct = Math.round((workLoad / cap) * 100);
+    workLoadPctEl.textContent = `${workLoad}% / ${cap}%`;
+    workLoadPctEl.style.color = pctColor(pct);
+    updateLoadGauge("work", pct, true);
+  } else {
+    // 上限が0以下（未設定扱い）だと常にpct=0になり実際の負荷に関わらず正常色になってしまうため、
+    // 「上限未設定」であることが分かる表示にする
+    workLoadPctEl.textContent = `${workLoad}% / 上限未設定`;
+    workLoadPctEl.style.color = "var(--text-sub)";
+    updateLoadGauge("work", 0, false);
+  }
 
   const privateLoadPctEl = document.getElementById("privateLoadPct");
   if (!privateLoadPctEl) return;
   const privateLoad = relevant.filter(t => isPrivateCategory(t.category)).reduce((sum, t) => sum + resolveTaskLoad(t), 0);
   const privateCap = Number(state.settings.privateLoadCap) || 0;
-  const privatePct = privateCap > 0 ? Math.round((privateLoad / privateCap) * 100) : 0;
-  privateLoadPctEl.textContent = `${privateLoad}% / ${privateCap}%`;
-  privateLoadPctEl.style.color = pctColor(privatePct);
+  if (privateCap > 0) {
+    const privatePct = Math.round((privateLoad / privateCap) * 100);
+    privateLoadPctEl.textContent = `${privateLoad}% / ${privateCap}%`;
+    privateLoadPctEl.style.color = pctColor(privatePct);
+    updateLoadGauge("private", privatePct, true);
+  } else {
+    privateLoadPctEl.textContent = `${privateLoad}% / 上限未設定`;
+    privateLoadPctEl.style.color = "var(--text-sub)";
+    updateLoadGauge("private", 0, false);
+  }
 }
 
 // 「開始日」(task.start, 日付のみ) と「時刻」(task.time) を組み合わせて実際の開始日時を作る。
@@ -1535,6 +1879,158 @@ function estimateOptions(current, prefix = "") {
   }
   return html;
 }
+// 実績時間：見積もりと同じ0.25〜8時間刻みに「未記録」を加えた選択肢（🕐タイムログ機能で使う）
+function actualOptions(current) {
+  const cur = Number(current) || 0;
+  let html = `<option value="0" ${cur === 0 ? "selected" : ""}>未記録</option>`;
+  for (let q = 1; q <= 32; q++) {
+    const v = q / 4;
+    html += `<option value="${v}" ${v === cur ? "selected" : ""}>${v}h</option>`;
+  }
+  return html;
+}
+// 見積もりと実績時間のズレを、表示ラベルと色分けクラスにまとめる（誤差は0.25h単位の整数比較で浮動小数の誤差を避ける）
+function actualDiffInfo(t) {
+  const est = Number(t.estimate) || 0;
+  const act = Number(t.actual) || 0;
+  if (!est || !act) return { label: "", cls: "" };
+  const diffQuarters = Math.round(act * 4) - Math.round(est * 4);
+  if (diffQuarters === 0) return { label: "(誤差なし)", cls: "diff-ok" };
+  const diff = diffQuarters / 4;
+  const label = `(${diff > 0 ? "+" : ""}${diff}h)`;
+  if (diff <= 0) return { label, cls: "diff-ok" }; // 見積もりより早く終わった分には警告色を付けない
+  return { label, cls: diff > est * 0.5 ? "diff-over" : "diff-warn" };
+}
+// 見積もりと実績が両方そろっているタスク全体から、「実績は見積もりの平均何倍か」を算出する（🕐見積もりのクセ）。
+// サンプルが少ないうちは誤差が大きくノイズになるため、3件以上たまってから表示する
+function estimateBiasStats() {
+  const rows = state.tasks.filter(t => Number(t.estimate) > 0 && Number(t.actual) > 0);
+  if (rows.length < 3) return null;
+  const avgRatio = rows.reduce((sum, t) => sum + Number(t.actual) / Number(t.estimate), 0) / rows.length;
+  return { count: rows.length, avgRatio };
+}
+
+// ===== 🎮 ゲーミフィケーション：完了のたびにXPを貯めてレベルアップし、連続達成日数（ストリーク）や
+// 実績バッジで日々のタスク管理を少し楽しくする。一覧の見やすさ・使いやすさが主役なので、
+// 演出は「やり切った瞬間だけ」出し、常設表示はヘッダー下の1行（Lv.・XPバー・🔥ストリーク・実績ボタン）に留める =====
+
+// レベルは累計XPを100区切りにしただけの単純な式（Lv.1=0〜99XP、Lv.2=100〜199XP…）。
+// 「次のレベルまでの残りXP」を都度別管理する複雑さを避け、xp % 100 だけで今のレベル内の進捗が求まるようにする
+function gamLevel(xp) {
+  return Math.floor(Math.max(0, Number(xp) || 0) / 100) + 1;
+}
+function gamLevelProgressPct(xp) {
+  return Math.max(0, Number(xp) || 0) % 100;
+}
+// タスク1件を完了した時に得られるXP。優先度・負荷が高いタスクほど少し多めに得られるようにし、
+// 「大事なタスクをやり切った」達成感がXPの伸びにも表れるようにする（目安：優先度3・負荷50%で10+9+10=29XP）
+function taskXpValue(task) {
+  const importance = Number(task.importance) || 3;
+  const load = Number(task.load) || 0;
+  return 10 + importance * 3 + Math.round(load / 5);
+}
+// "YYYY-MM-DD" 形式の、実際に今ブラウザを開いている日（Todoの表示中の日付＝scheduleViewDateとは別物）。
+// ストリークは「今日、実際に何かを完了させたか」を数えるものなので、表示中の日付には依存させない
+function todayDateStr() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+// 実績バッジの定義一覧。judge(g)のgはstate.gamification。既に解除済みでなく、条件を満たしたものが対象になる
+const GAMIFICATION_BADGES = [
+  { id: "first_done", icon: "🔰", label: "はじめの一歩", desc: "タスクを1件完了する", judge: g => g.totalDone >= 1 },
+  { id: "done_10", icon: "🥉", label: "コツコツ10件", desc: "タスクを合計10件完了する", judge: g => g.totalDone >= 10 },
+  { id: "done_50", icon: "🥈", label: "頼れる50件", desc: "タスクを合計50件完了する", judge: g => g.totalDone >= 50 },
+  { id: "done_100", icon: "🥇", label: "達人100件", desc: "タスクを合計100件完了する", judge: g => g.totalDone >= 100 },
+  { id: "streak_3", icon: "🔥", label: "3日連続", desc: "3日連続でタスクを完了する", judge: g => g.streakBest >= 3 },
+  { id: "streak_7", icon: "🔥🔥", label: "1週間連続", desc: "7日連続でタスクを完了する", judge: g => g.streakBest >= 7 },
+  { id: "streak_30", icon: "🔥🔥🔥", label: "1ヶ月連続", desc: "30日連続でタスクを完了する", judge: g => g.streakBest >= 30 },
+  { id: "level_5", icon: "⭐", label: "Lv.5到達", desc: "レベル5に到達する", judge: g => gamLevel(g.xp) >= 5 },
+  { id: "level_10", icon: "🌟", label: "Lv.10到達", desc: "レベル10に到達する", judge: g => gamLevel(g.xp) >= 10 },
+  {
+    id: "estimate_master", icon: "🎯", label: "見積もり名人",
+    desc: "見積もりの平均誤差1割以内を保つ（🕐見積もりのクセが5件以上たまった時点で判定）",
+    judge: () => { const bias = estimateBiasStats(); return !!bias && bias.count >= 5 && Math.abs(bias.avgRatio - 1) <= 0.1; },
+  },
+];
+// タスクを完了にした時にまとめて呼ぶ：XP付与・ストリーク更新・バッジ判定を行い、演出に必要な情報を返す
+function applyGamificationOnDone(task) {
+  const g = state.gamification;
+  const xpGain = taskXpValue(task);
+  task.xpAwarded = xpGain; // 完了取り消し時に同じ分だけ差し引くため、タスク側にも記録しておく
+  const beforeLevel = gamLevel(g.xp);
+  g.xp += xpGain;
+  g.totalDone += 1;
+  const afterLevel = gamLevel(g.xp);
+
+  // ストリーク：実際の「今日」に初めて完了させた時だけ日数を進める（同じ日に何件完了させても2日分にはしない）
+  const today = todayDateStr();
+  let streakGained = false;
+  if (g.lastActiveDate !== today) {
+    const yesterday = addDaysStr(today, -1);
+    g.streakCurrent = (g.lastActiveDate === yesterday) ? g.streakCurrent + 1 : 1;
+    g.streakBest = Math.max(g.streakBest, g.streakCurrent);
+    g.lastActiveDate = today;
+    streakGained = true;
+  }
+
+  const newlyUnlocked = GAMIFICATION_BADGES.filter(b => !g.badges.includes(b.id) && b.judge(g));
+  newlyUnlocked.forEach(b => g.badges.push(b.id));
+
+  return { xpGain, leveledUp: afterLevel > beforeLevel, newLevel: afterLevel, streakGained, newlyUnlocked };
+}
+// 完了を取り消した時：付与したXP・完了件数を差し引く。ストリーク・実績バッジはあえて取り消さない
+// （「今日1つやった」という事実や解除済みバッジを、チェックの外し忘れ修正のたびに巻き戻すと煩雑になるため）
+function revertGamificationOnUndone(task) {
+  const g = state.gamification;
+  if (task.xpAwarded) {
+    g.xp = Math.max(0, g.xp - task.xpAwarded);
+    g.totalDone = Math.max(0, g.totalDone - 1);
+    delete task.xpAwarded;
+  }
+}
+let gameToastTimer = null;
+// レベルアップ・実績解除を、画面上部の控えめなトーストで知らせる（数秒で自動的に消える）
+function showGameToast(message) {
+  const toast = document.getElementById("gameToast");
+  if (!toast) return;
+  clearTimeout(gameToastTimer);
+  document.getElementById("gameToastMsg").textContent = message;
+  toast.style.display = "flex";
+  gameToastTimer = setTimeout(() => { toast.style.display = "none"; }, 2600);
+}
+// 🔥ストリークの炎アイコンSVG。色は.game-streakの--heat（0〜100）とCSSのcolor-mix()で連続的に変える
+// （負荷ゲージの「顔」アイコンと同じ考え方。絵文字ではなくSVGにして、色をCSS変数で確実に制御できるようにしている）
+function flameSvg() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">
+    <path class="flame-shape" d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1.5-.7-2.4-1.3-3.2.6 2-1 2.7-1 4.2a1.7 1.7 0 0 1-3.4 0c0-3-3-4.3-.3-8z"></path>
+  </svg>`;
+}
+// XP・レベル・ストリーク・実績バッジ数を、ヘッダー直下のゲームバーに反映する（renderAllのたびに呼ぶ）
+function renderGameBar() {
+  const g = state.gamification;
+  const levelEl = document.getElementById("gameLevelBadge");
+  if (!levelEl) return;
+  levelEl.textContent = `Lv.${gamLevel(g.xp)}`;
+  document.getElementById("gameXpFill").style.width = `${gamLevelProgressPct(g.xp)}%`;
+  const streakEl = document.getElementById("gameStreak");
+  streakEl.classList.toggle("is-active", g.streakCurrent > 0);
+  streakEl.style.setProperty("--heat", Math.max(0, Math.min(100, (g.streakCurrent - 1) * 12)));
+  document.getElementById("gameStreakIcon").innerHTML = flameSvg();
+  document.getElementById("gameStreakCount").textContent = `${g.streakCurrent}日`;
+  document.getElementById("gameBadgeCount").textContent = `${g.badges.length}/${GAMIFICATION_BADGES.length}`;
+}
+// ⚙️設定内「🏆 実績」一覧を描画する。未解除もグレーで並べて、目標として見えるようにする
+function renderBadgeList() {
+  const el = document.getElementById("badgeList");
+  if (!el) return;
+  const g = state.gamification;
+  el.innerHTML = GAMIFICATION_BADGES.map(b => {
+    const unlocked = g.badges.includes(b.id);
+    return `<span class="badge-chip${unlocked ? " unlocked" : ""}" title="${escapeHtml(b.desc)}">${b.icon} ${escapeHtml(b.label)}</span>`;
+  }).join("");
+}
+
 // 締め区分の移動先セレクト：state.cycleGroups（⚙️設定で個人ごとに編集可能）から<option>群を作る
 function cycleOptions(current) {
   const cur = state.cycleGroups.includes(current) ? current : state.cycleGroups[0];
@@ -1614,6 +2110,9 @@ document.getElementById("f-cycle").innerHTML = cycleOptions(activeCycleTab);
 document.getElementById("addBtn").addEventListener("click", () => {
   const data = readForm();
   if (!data.title) { alert("タイトルを入力してください。"); return; }
+  // 終了日が開始日より前だとガントチャート・カレンダー登録・詳細表示の扱いが食い違うため、
+  // 入力時点で終了日を開始日に揃えておく
+  if (data.start && data.deadline && data.deadline < data.start) data.deadline = data.start;
   state.tasks.push({ id: uid(), ...data });
   saveData();
   clearForm();
@@ -1650,7 +2149,12 @@ document.getElementById("taskBody").addEventListener("click", (e) => {
         .catch(err => { alert(err.message); btn.disabled = false; });
     } else {
       // noopenerを付けて、開いた先のタブから元のタブ（window.opener）を操作できないようにする（reverse tabnabbing対策）
-      window.open(googleCalendarUrl(task), "_blank", "noopener,noreferrer");
+      try {
+        window.open(googleCalendarUrl(task), "_blank", "noopener,noreferrer");
+      } catch (err) {
+        // 開始日が壊れた日付文字列だとfmtGCal内のtoISOString()で例外になる。連携時と同じくアラートで理由を伝える
+        alert("カレンダーへの追加に失敗しました（開始日が正しい日付ではないようです）。");
+      }
     }
   }
 });
@@ -1715,7 +2219,7 @@ document.getElementById("importDataInput").addEventListener("change", (e) => {
     // 一覧の描画がHTMLとして解釈されたり、型違いの値で処理が落ちたりしないようにするため）。
     // idは他のデータや外部サービスと紐付く情報ではないため、常にこのアプリ内で振り直す
     imported.tasks = imported.tasks
-      .filter(t => t && typeof t === "object")
+      .filter(t => t && typeof t === "object" && !Array.isArray(t))
       .map(t => ({ ...t, id: uid() }));
     // カテゴリ・締め区分のマスタも、配列でなかったり中身が壊れていれば無視する（不足分はmigrateLegacyStateが補う）
     if (Array.isArray(imported.categories)) {
@@ -1833,11 +2337,12 @@ document.getElementById("scheduleDeleteDayBtn").addEventListener("click", () => 
   const dateLabel = `${scheduleViewDate.getMonth() + 1}月${scheduleViewDate.getDate()}日`;
   if (!confirm(`表示中の日（${dateLabel}）のタスクを${targets.length}件、この日のTodoから外します（タスク一覧には残ります）。よろしいですか？`)) return;
 
-  targets.forEach(t => { t.todoDate = ""; });
+  const prevActuals = new Map(targets.map(t => [t.id, t.actual])); // 元に戻す時のために、外す前の実績記録を覚えておく
+  targets.forEach(t => { t.todoDate = ""; t.actual = undefined; }); // 外すタイミングで実績記録もリセットする（他の操作と同じ考え方）
   saveData();
   renderAll();
   showUndoToast(`表示中の日のTodoから${targets.length}件外しました`, () => {
-    targets.forEach(t => { t.todoDate = dateStr; });
+    targets.forEach(t => { t.todoDate = dateStr; t.actual = prevActuals.get(t.id); });
     saveData();
     renderAll();
   });
@@ -1869,8 +2374,10 @@ document.getElementById("taskBody").addEventListener("change", (e) => {
       if (target.checked) {
         task.todoDate = viewDateKey(scheduleViewDate);
         task.todoOrder = nextTodoOrder(); // その日のTodoの一番後ろに追加する
+        task.status = "not_started"; // Todoに新しく入れ直すタイミングなので、完了状態は引き継がずリセットする
       } else {
         task.todoDate = "";
+        task.actual = undefined; // その日のTodoから外すタイミングで、その日の実績記録もリセットする（別の日に使い回すと古い記録が残ってしまうため）
       }
       saveData();
     }
@@ -1890,6 +2397,11 @@ document.getElementById("taskBody").addEventListener("change", (e) => {
       task.estimate = Number(target.value) || 0.25;
     } else if (field === "importance" || field === "load") {
       task[field] = Number(target.value) || 0;
+    } else if (field === "start" || field === "deadline") {
+      task[field] = target.value;
+      // 終了日が開始日より前だとガントチャート・カレンダー登録・詳細表示の扱いが食い違うため、
+      // 行内編集でも終了日を開始日に揃えておく（追加フォームと同じ考え方）
+      if (task.start && task.deadline && task.deadline < task.start) task.deadline = task.start;
     } else {
       task[field] = target.value;
     }
@@ -1908,8 +2420,10 @@ document.getElementById("selectAllCheckbox").addEventListener("change", (e) => {
     if (checked) {
       task.todoDate = dateStr;
       task.todoOrder = order++; // 追加した順にその日のTodoの後ろへ並べる
+      task.status = "not_started"; // Todoに新しく入れ直すタイミングなので、完了状態は引き継がずリセットする
     } else {
       task.todoDate = "";
+      task.actual = undefined; // その日のTodoから外すタイミングで、その日の実績記録もリセットする
     }
   });
   saveData();
@@ -2029,6 +2543,21 @@ function renderTodoList() {
   }
 
   renderWorkLoad();
+  renderTimebox();
+
+  // 🕐見積もりのクセ：見積もりと実績が両方そろっているタスクが3件以上たまったら、平均のズレを表示する
+  const biasEl = document.getElementById("todoBiasHint");
+  if (biasEl) {
+    const bias = estimateBiasStats();
+    if (bias) {
+      const pct = Math.round((bias.avgRatio - 1) * 100);
+      const trend = pct > 0 ? `平均${pct}%多くかかる傾向` : pct < 0 ? `平均${Math.abs(pct)}%早く終わる傾向` : "見積もりとほぼ一致";
+      biasEl.textContent = `🕐 見積もりのクセ：実績は見積もりの平均${bias.avgRatio.toFixed(2)}倍（${trend}／${bias.count}件の記録より）`;
+      biasEl.style.display = "block";
+    } else {
+      biasEl.style.display = "none";
+    }
+  }
 
   // 未完了を上、完了を下にまとめる。同じグループ内は、Todo側でドラッグして決めた順（todoOrder）。
   // タスク一覧の並び順「カスタム」（state.tasks自体の並び）とは別物なので、互いに影響しない
@@ -2036,14 +2565,23 @@ function renderTodoList() {
 
   emptyEl.style.display = tasks.length ? "none" : "block";
 
+  // 🎉 表示中の日にタスクが1件以上あり、その全てを完了させていたら達成バナーを出す
+  const dayCompleteEl = document.getElementById("todoDayComplete");
+  if (dayCompleteEl) {
+    dayCompleteEl.style.display = (tasks.length > 0 && tasks.every(t => t.status === "done")) ? "flex" : "none";
+  }
+
   for (const t of tasks) {
     const isDone = t.status === "done";
     const isMemoOpen = openMemoIds.has(t.id);
+    const isActualOpen = openActualIds.has(t.id);
+    const diff = actualDiffInfo(t);
     const item = document.createElement("div");
     item.className = `todo-item imp-${importanceBucket(t.importance)}${isDone ? " todo-done" : ""}`;
     item.dataset.id = t.id;
     item.innerHTML = `
       <span class="drag-handle todo-drag-handle" title="ドラッグで並び替え">⠿</span>
+      <button type="button" class="todo-done-toggle${isDone ? " is-done" : ""}" data-id="${escapeHtml(t.id)}" title="${isDone ? "完了を取り消す" : "完了にする"}">${isDone ? "✅" : "⬜"}</button>
       <div class="todo-main">
         <span class="todo-body">
           <span class="todo-title">${escapeHtml(t.title)}</span>
@@ -2052,32 +2590,190 @@ function renderTodoList() {
             <span>優先度${Number(t.importance) || 0}</span>
             <span>負荷${Number(t.load) || 0}%</span>
             <span>見積${Number(t.estimate) || 0}h</span>
+            ${t.actual ? `<span class="${diff.cls}">実績${Number(t.actual)}h${diff.label}</span>` : ""}
           </span>
+          ${isActualOpen ? `<select class="inline-edit todo-actual-input" data-id="${escapeHtml(t.id)}" title="実績時間（クリックして記録）">${actualOptions(t.actual)}</select>` : ""}
           ${isMemoOpen ? `<textarea class="inline-edit todo-memo-input" data-id="${escapeHtml(t.id)}" placeholder="メモを入力…">${escapeHtml(t.memo || "")}</textarea>` : ""}
         </span>
       </div>
+      <button type="button" class="todo-actual-toggle${t.actual ? " has-actual" : ""}" data-id="${escapeHtml(t.id)}" title="${isActualOpen ? "実績時間欄を閉じる" : "実績時間を記録"}" aria-expanded="${isActualOpen}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path></svg></button>
       <button type="button" class="todo-memo-toggle${t.memo ? " has-memo" : ""}" data-id="${escapeHtml(t.id)}" title="${isMemoOpen ? "メモを閉じる" : "メモを開く"}" aria-expanded="${isMemoOpen}">🗒️</button>
     `;
     listEl.appendChild(item);
   }
 }
 
-// メモ欄の開閉（📝ボタン）。タスクごとに独立して開閉状態を持つ
+// 🧱タイムボックス：表示中の日のTodoのうち、時刻が設定されているタスクだけを、0:00〜24:00の時間軸に沿った
+// ブロックとして描画する（見積もり時間ぶんの高さ）。時間が重なるタスクは、簡易な区間分割で横に並べて重なりを避ける。
+function renderTimebox() {
+  const hoursEl = document.getElementById("timeboxHours");
+  const mainEl = document.getElementById("timeboxMain");
+  const emptyEl = document.getElementById("timeboxEmpty");
+  if (!hoursEl || !mainEl) return;
+
+  const H = TIMEBOX_HOUR_HEIGHT;
+  const totalHeight = H * 24;
+  // 見た目の最低高さ(px、CSSの.timebox-block { min-height }と揃える)を、分に換算したもの。
+  // 重なり判定（クラスタ分け・レーン割り当て）も、見た目の高さと同じこの長さを「占有時間」とみなして行わないと、
+  // 実際の見積もり時間は短くて重ならないはずの予定が、底上げされた見た目の高さ分だけ下の予定と重なって描画されてしまう
+  const MIN_BLOCK_MIN = (20 / H) * 60;
+
+  let hoursHtml = "";
+  let gridHtml = "";
+  for (let h = 0; h < 24; h++) {
+    hoursHtml += `<div class="timebox-hour-label" style="top:${h * H}px;">${h}:00</div>`;
+    gridHtml += `<div class="timebox-gridline" style="top:${h * H}px;"></div>`;
+  }
+  hoursEl.style.height = `${totalHeight}px`;
+  hoursEl.innerHTML = hoursHtml;
+
+  // 時刻が設定されているタスクだけを対象に、開始・終了（分単位、0〜1440にクランプ）を求めて開始時刻順に並べる
+  const items = getTodayTasksSorted(scheduleViewDate)
+    .filter(t => t.time)
+    .map(t => {
+      const [hh, mm] = t.time.split(":").map(Number);
+      const startMin = Math.max(0, Math.min(1440, (hh || 0) * 60 + (mm || 0)));
+      const durMin = Math.max(MIN_BLOCK_MIN, (Number(t.estimate) || 0.25) * 60); // 見た目の最低高さぶんは必ず占有時間とみなす
+      const endMin = Math.max(startMin, Math.min(1440, startMin + durMin));
+      return { task: t, startMin, endMin };
+    })
+    .sort((a, b) => a.startMin - b.startMin);
+
+  emptyEl.style.display = items.length ? "none" : "block";
+
+  // 時間が重なっている塊（クラスタ）ごとに分けてから、それぞれ独立にレーン分割する。
+  // 単に全体を通して1つのレーン数で幅を割ると、離れた時間帯にたまたま3件重なる箇所があるだけで、
+  // 他の全く重ならないタスクまで1/3幅に縮んで見えなくなってしまうため、クラスタ単位で幅を決める
+  const placed = [];
+  let cluster = [];
+  let clusterEnd = -Infinity; // クラスタ内タスクの終了時刻の最大値。これ以降に始まるタスクは別クラスタ
+  const flushCluster = () => {
+    if (!cluster.length) return;
+    const laneEnds = [];
+    const laned = cluster.map(it => {
+      let lane = laneEnds.findIndex(end => end <= it.startMin);
+      if (lane === -1) { lane = laneEnds.length; laneEnds.push(it.endMin); }
+      else laneEnds[lane] = it.endMin;
+      return { ...it, lane };
+    });
+    const laneCount = Math.max(1, laneEnds.length); // このクラスタ内だけで必要だったレーン数
+    laned.forEach(it => placed.push({ ...it, laneCount }));
+    cluster = [];
+  };
+  for (const it of items) {
+    if (cluster.length && it.startMin >= clusterEnd) flushCluster(); // 前のクラスタと重ならないので区切る
+    cluster.push(it);
+    clusterEnd = Math.max(clusterEnd, it.endMin);
+  }
+  flushCluster();
+
+  const blocksHtml = placed.map(({ task: t, startMin, endMin, lane, laneCount }) => {
+    const top = (startMin / 60) * H;
+    const height = ((endMin - startMin) / 60) * H;
+    const left = (lane / laneCount) * 100;
+    const width = (1 / laneCount) * 100;
+    const endH = Math.floor(endMin / 60);
+    const endM = endMin % 60;
+    const timeRange = `${t.time}〜${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+    const isDone = t.status === "done";
+    // 短い予定は高さが足りずタイトルと時刻の2行が重なって見えなくなるため、時刻の行は高さに余裕がある時だけ出す
+    const showTimeLine = height >= 34;
+    return `<div class="timebox-block imp-${importanceBucket(t.importance)}${isDone ? " tb-done" : ""}"
+      style="top:${top}px; height:${Math.max(height, 20)}px; left:calc(${left}% + 2px); width:calc(${width}% - 4px);"
+      title="${escapeHtml(t.title)}（${escapeHtml(timeRange)}）">
+      <span class="tb-title">${escapeHtml(t.title)}</span>
+      ${showTimeLine ? `<span class="tb-time">${escapeHtml(timeRange)}</span>` : ""}
+    </div>`;
+  }).join("");
+
+  // 表示中の日が今日なら、現在時刻の位置に横線を入れる（「予期」と「今」を並べて見せるため）
+  let nowLineHtml = "";
+  if (isSameDay(scheduleViewDate, new Date())) {
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    nowLineHtml = `<div class="timebox-now-line" style="top:${(nowMin / 60) * H}px;"></div>`;
+  }
+
+  mainEl.style.height = `${totalHeight}px`;
+  mainEl.innerHTML = gridHtml + nowLineHtml + blocksHtml;
+}
+
+// メモ欄の開閉（🗒️ボタン）・完了トグル（✅／⬜）・実績時間欄の開閉（⏱ボタン）。タスクごとに独立して状態を持つ
 document.getElementById("todoList").addEventListener("click", (e) => {
-  const toggle = e.target.closest(".todo-memo-toggle");
-  if (!toggle) return;
-  const id = toggle.dataset.id;
-  if (openMemoIds.has(id)) openMemoIds.delete(id); else openMemoIds.add(id);
-  renderTodoList();
+  const memoToggle = e.target.closest(".todo-memo-toggle");
+  if (memoToggle) {
+    const id = memoToggle.dataset.id;
+    if (openMemoIds.has(id)) openMemoIds.delete(id); else openMemoIds.add(id);
+    renderTodoList();
+    return;
+  }
+  const doneToggle = e.target.closest(".todo-done-toggle");
+  if (doneToggle) {
+    const task = state.tasks.find(t => t.id === doneToggle.dataset.id);
+    if (!task) return;
+    const becomingDone = task.status !== "done";
+    task.status = becomingDone ? "done" : "not_started";
+
+    // 🎮 完了にした時だけXP・ストリーク・実績バッジを進める（チェックの外し忘れ修正では巻き戻すだけにする）
+    let gameResult = null;
+    if (becomingDone) {
+      gameResult = applyGamificationOnDone(task);
+    } else {
+      revertGamificationOnUndone(task);
+    }
+
+    saveData();
+    renderAll(); // 📊ガントチャートの完了表示（取り消し線）にも反映するため一覧全体を再描画する
+
+    if (gameResult) {
+      // renderAll()で一覧のDOMが作り直されているため、演出対象の要素は再描画後に改めて取得する
+      const newToggle = document.querySelector(`.todo-done-toggle[data-id="${CSS.escape(task.id)}"]`);
+      if (newToggle) {
+        newToggle.classList.add("celebrate");
+        setTimeout(() => newToggle.classList.remove("celebrate"), 500);
+        const floatEl = document.createElement("span");
+        floatEl.className = "xp-float";
+        floatEl.textContent = `+${gameResult.xpGain} XP`;
+        newToggle.closest(".todo-item")?.appendChild(floatEl);
+        setTimeout(() => floatEl.remove(), 1100);
+      }
+      if (gameResult.leveledUp) {
+        document.getElementById("gameLevelBadge")?.classList.add("level-pop");
+        setTimeout(() => document.getElementById("gameLevelBadge")?.classList.remove("level-pop"), 500);
+        showGameToast(`🎉 レベルアップ！ Lv.${gameResult.newLevel} になりました`);
+      } else if (gameResult.newlyUnlocked.length) {
+        const b = gameResult.newlyUnlocked[0];
+        showGameToast(`🏆 実績解除：${b.icon} ${b.label}`);
+      }
+    }
+    return;
+  }
+  const actualToggle = e.target.closest(".todo-actual-toggle");
+  if (actualToggle) {
+    const id = actualToggle.dataset.id;
+    if (openActualIds.has(id)) openActualIds.delete(id); else openActualIds.add(id);
+    renderTodoList();
+  }
 });
-// メモの内容はフォーカスが外れた時に保存する（他の入力欄と同じ、入力のたびに再描画してカーソル位置を失わないようにするため）
+// メモ・実績時間の内容は、値が変わった時（メモはフォーカスが外れた時）に保存する。
+// 入力のたびに再描画せずカーソル位置を保つ考え方はメモ欄と同じ
 document.getElementById("todoList").addEventListener("change", (e) => {
-  if (!e.target.matches(".todo-memo-input")) return;
-  const task = state.tasks.find(t => t.id === e.target.dataset.id);
-  if (!task) return;
-  task.memo = e.target.value;
-  saveData();
-  renderTodoList(); // 📝ボタンの「入力済み」表示を更新するため
+  if (e.target.matches(".todo-memo-input")) {
+    const task = state.tasks.find(t => t.id === e.target.dataset.id);
+    if (!task) return;
+    task.memo = e.target.value;
+    saveData();
+    renderTodoList(); // 🗒️ボタンの「入力済み」表示を更新するため
+    return;
+  }
+  if (e.target.matches(".todo-actual-input")) {
+    const task = state.tasks.find(t => t.id === e.target.dataset.id);
+    if (!task) return;
+    const v = Number(e.target.value) || 0;
+    task.actual = v > 0 ? v : undefined; // 「未記録」(0)を選び直した時は記録自体を消す
+    saveData();
+    renderTodoList(); // ⏱ボタンの「記録済み」表示・見積もりとの差分表示を更新するため
+  }
 });
 
 // Todoリストの右クリックで、そのタスクをこの日のTodoから外す（タスク一覧からは削除しない。元に戻すトースト付き）
@@ -2436,10 +3132,20 @@ function renderAll() {
   renderTasks();
   renderTodoList();
   renderGanttChart();
+  renderGameBar();
+  renderBadgeList();
 }
 renderAll();
 syncSettingsForm();
 updateGcalUI(); // 保存済みトークンがあればボタン表示を「連携済み」状態にする
+
+// ゲームバーの🏆ボタン：⚙️設定パネルを開いて「🏆 実績」セクションまでスクロールする
+document.getElementById("gameBadgesBtn").addEventListener("click", () => {
+  const panel = document.getElementById("settingsPanel");
+  panel.style.display = "";
+  syncSettingsForm();
+  document.getElementById("badgeSection")?.scrollIntoView({ behavior: "smooth", block: "center" });
+});
 </script>
 </body>
 </html>
